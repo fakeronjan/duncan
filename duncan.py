@@ -6,6 +6,11 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import numpy as np
+# rankit==0.2 uses deprecated numpy aliases (np.int, np.float, np.bool) removed in numpy 1.24+.
+# Restore them before rankit import so the Massey solver works.
+if not hasattr(np, 'int'):   np.int = int
+if not hasattr(np, 'float'): np.float = float
+if not hasattr(np, 'bool'):  np.bool = bool
 from datetime import datetime
 import warnings
 import rankit  # pip install rankit
