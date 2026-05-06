@@ -307,14 +307,14 @@ function fmtRecord(rec) {
 }
 
 function fmtRecordStacked(reg, playoff) {
-  // Champions/GOAT: regular-season W-L on top, playoff W-L in dimmed parens below.
+  // Champions/GOAT: regular-season W-L with win pct on top.
+  // For playoff teams, add playoff W-L on a new line (no parens).
   if (!reg) return '—';
-  const m = reg.match(/^(\d+)\s*-\s*(\d+)$/);
-  const regStr = m ? `${m[1]}-${m[2]}` : reg;
+  const top = fmtRecord(reg);
   const pm = playoff ? playoff.match(/^(\d+)-(\d+)$/) : null;
   const hasPlayoffs = pm && (parseInt(pm[1]) + parseInt(pm[2]) > 0);
-  if (!hasPlayoffs) return regStr;
-  return `${regStr}<div style="font-size:10px;color:#888;font-weight:400;line-height:1.2">(${playoff})</div>`;
+  if (!hasPlayoffs) return top;
+  return `${top}<div style="font-size:10px;color:#888;font-weight:400;line-height:1.2">${playoff}</div>`;
 }
 
 function fmtRecordSmart(reg, playoff, fallback) {
