@@ -710,9 +710,9 @@ function renderGoat() {
   let displayRank = 1;
   const rows = goatData.map(t => `<tr>
     <td class="rank-cell">${displayRank++}</td>
+    <td>${t.season}</td>
     <td class="team-cell">${t.team}</td>
     <td class="col-hide-mobile" style="font-size:11px;color:#888">${t.conference || ''}</td>
-    <td>${t.season}</td>
     <td>${ratingBar(t.rating)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap" class="col-hide-mobile">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(t.finals_status)}</td>
@@ -721,9 +721,8 @@ function renderGoat() {
   document.getElementById('goat-table-wrap').innerHTML = `
     <table>
       <thead><tr>
-        <th>All time rank</th><th>Team</th>
+        <th>All time rank</th><th>Season</th><th>Team</th>
         <th class="col-hide-mobile">Conf</th>
-        <th>Season</th>
         <th>Rating</th>
         <th class="col-hide-mobile">W-L</th>
         <th class="col-hide-mobile">Honors</th>
