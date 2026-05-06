@@ -118,7 +118,7 @@
     font-weight: 700;
     color: #888;
     width: 36px;
-    text-align: right;
+    text-align: center;
   }
   .team-cell { font-weight: 600; }
 
@@ -710,7 +710,7 @@ function renderGoat() {
   let displayRank = 1;
   const rows = goatData.map(t => `<tr>
     <td class="rank-cell">${displayRank++}</td>
-    <td>${t.season}</td>
+    <td style="text-align:center">${t.season}</td>
     <td class="team-cell">${t.team}</td>
     <td class="col-hide-mobile" style="font-size:11px;color:#888">${t.conference || ''}</td>
     <td>${ratingBar(t.rating)}</td>
@@ -721,7 +721,9 @@ function renderGoat() {
   document.getElementById('goat-table-wrap').innerHTML = `
     <table>
       <thead><tr>
-        <th>All time rank</th><th>Season</th><th>Team</th>
+        <th style="text-align:center">All time rank</th>
+        <th style="text-align:center">Season</th>
+        <th>Team</th>
         <th class="col-hide-mobile">Conf</th>
         <th>Rating</th>
         <th class="col-hide-mobile">W-L</th>
