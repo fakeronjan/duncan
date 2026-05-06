@@ -1,0 +1,475 @@
+# =========================================================
+# DUNCAN NBA POWER RATINGS
+# =========================================================
+
+from bs4 import BeautifulSoup
+import requests
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import warnings
+import rankit  # pip install rankit
+from rankit.Table import Table
+from rankit.Ranker import MasseyRanker
+
+# Suppress SettingWithCopyWarning from rankit library internals.
+# pandas 3.x removed this class, so guard the lookup.
+try:
+    warnings.filterwarnings('ignore', category=pd.errors.SettingWithCopyWarning)
+except AttributeError:
+    pass
+
+# =========================================================
+# CONFIGURATION
+# =========================================================
+
+MIN_SEASON = 1980           # DO NOT CHANGE — affects all historical data
+ROLLING_WINDOW = 100        # number of game-days used in Massey rating window
+HOME_COURT_ADJUSTMENT = 0.25  # added to visitor margin, subtracted from home margin
+
+# Regular season game count threshold (Option B proxy for playoff start).
+# NBA regular season is 82 games per team. Lockout/COVID exceptions:
+#   1999: ~50 games, 2012: ~66 games, 2020: ~65-72 games (bubble)
+REGULAR_SEASON_GAMES = 82
+SHORTENED_SEASON_OVERRIDES = {
+    1999: 50,
+    2012: 66,
+    2020: 72,
+}
+
+# =========================================================
+# SCRAPING
+# =========================================================
+
+MONTHS = [
+    'october', 'november', 'december', 'january', 'february',
+    'march', 'april', 'may', 'june', 'july', 'august', 'september'
+]
+
+
+def scrape_table(url, year):
+    """Scrape a single basketball-reference schedule page into a DataFrame."""
+    r = requests.get(url)
+    if '404' in str(r):
+        return pd.DataFrame()
+
+    html = BeautifulSoup(r.text, "lxml")
+    columns = [i['data-stat'] for i in html.select('#schedule > thead > tr > th')]
+    data = {k: [] for k in columns}
+
+    for row in html.select('#schedule > tbody > tr'):
+        for entry in row:
+            if 'Playoffs' in entry:
+                break
+            data[entry['data-stat']].append(entry.get_text())
+
+    df = pd.DataFrame(data)
+    df['season'] = year
+    return df
+
+
+def scrape_games(min_season, max_season, existing_df):
+    """
+    Scrape any seasons not already fully captured in existing_df.
+    Returns a combined DataFrame of all games (old + new), saved to loaded_nba_games.csv.
+    """
+    max_season_completed = max(existing_df['season']) - 1  # latest season may be partial
+    min_season_completed = min(existing_df['season'])
+
+    print(f"Already have complete data for seasons {min_season_completed}–{max_season_completed}")
+    print(f"Checking for new data through season {max_season}")
+
+    new_frames = []
+    for year in range(min_season, max_season + 1):
+        if min_season_completed <= year <= max_season_completed:
+            continue
+        for month in MONTHS:
+            url = f'https://www.basketball-reference.com/leagues/NBA_{year}_games-{month}.html'
+            df = scrape_table(url, year)
+            new_frames.append(df)
+        print(f"{year} — scraped!")
+
+    combined = pd.concat([existing_df] + new_frames, axis=0, sort=False).reset_index(drop=True)
+    combined.sort_values('season', inplace=True)
+    combined.drop_duplicates(keep="first", inplace=True)
+    combined.to_csv('loaded_nba_games.csv', index=False)
+    return combined
+
+
+# =========================================================
+# GAME DATA PREPARATION
+# =========================================================
+
+def prepare_game_data(raw_df):
+    """
+    Clean and enrich the raw games DataFrame with margins, win flags,
+    adjusted scores, date IDs, and result strings.
+    """
+    df = raw_df[['season', 'date_game', 'visitor_team_name', 'visitor_pts', 'home_team_name', 'home_pts']].copy()
+
+    df['visitor_pts'] = pd.to_numeric(df['visitor_pts'])
+    df['home_pts'] = pd.to_numeric(df['home_pts'])
+
+    # Margin of victory
+    df['visitor_margin'] = df['visitor_pts'] - df['home_pts']
+    df['home_margin'] = -df['visitor_margin']
+
+    # Win flags
+    df['visitor_win'] = np.where(df['visitor_margin'] > 0, 1, 0)
+    df['home_win'] = 1 - df['visitor_win']
+
+    # Square-root margin (preserves direction)
+    df['visitor_sqrt_margin'] = np.where(
+        df['visitor_margin'] > 0,
+        df['visitor_margin'] ** 0.5,
+        -(df['home_margin'] ** 0.5)
+    )
+    df['home_sqrt_margin'] = -df['visitor_sqrt_margin']
+
+    # Home court adjustment
+    df['visitor_adjusted_margin'] = df['visitor_sqrt_margin'] + HOME_COURT_ADJUSTMENT
+    df['home_adjusted_margin'] = -df['visitor_adjusted_margin']
+
+    # Drop incomplete rows before date parsing
+    df = df.dropna()
+
+    # Date parsing and sorting
+    df['date_game'] = pd.to_datetime(df['date_game'], format='%a, %b %d, %Y')
+    df.sort_values('date_game', inplace=True)
+    df.drop_duplicates(keep="first", inplace=True)
+
+    # Date and game IDs
+    df['grouped_date_id'] = df.groupby(['date_game']).ngroup() + 1
+    df['unique_game_id'] = df.groupby(df.columns.tolist(), sort=False).ngroup() + 1
+
+    # Result strings
+    df['home_pts'] = df['home_pts'].astype(int)
+    df['visitor_pts'] = df['visitor_pts'].astype(int)
+    df['home_wl'] = np.where(df['home_win'] == 1, "W", "L")
+    df['visitor_wl'] = np.where(df['visitor_win'] == 1, "W", "L")
+    df['home_result'] = (
+        df['home_wl'] + " vs. " + df['visitor_team_name'] + " "
+        + df['home_pts'].map(str) + "-" + df['visitor_pts'].map(str)
+    )
+    df['visitor_result'] = (
+        df['visitor_wl'] + " @ " + df['home_team_name'] + " "
+        + df['visitor_pts'].map(str) + "-" + df['home_pts'].map(str)
+    )
+
+    df.to_csv('all_nba_games.csv', index=False)
+    print("CSV of NBA games is ready!")
+    return df
+
+
+# =========================================================
+# MASSEY RATINGS
+# =========================================================
+
+def compute_ratings(master_df, existing_ratings_df):
+    """
+    Compute daily Massey power ratings using a rolling ROLLING_WINDOW-day window.
+    Skips dates already present in existing_ratings_df.
+    """
+    max_date_id = max(master_df['grouped_date_id'])
+    min_date_id = ROLLING_WINDOW
+    max_ranked = max(existing_ratings_df['ranking_id'])
+    min_ranked = min(existing_ratings_df['ranking_id'])
+
+    print("Running DUNCAN ratings for new data...")
+    new_frames = []
+
+    for i in range(min_date_id, max_date_id + 1):
+        if min_ranked <= i <= max_ranked:
+            continue
+
+        window = master_df[
+            (master_df['grouped_date_id'] >= i - (ROLLING_WINDOW - 1)) &
+            (master_df['grouped_date_id'] <= i)
+        ].copy()
+
+        window['date_weight'] = (window['grouped_date_id'] - i + ROLLING_WINDOW) / ROLLING_WINDOW
+        window['visitor_weighted_margin'] = window['visitor_adjusted_margin'] * window['date_weight']
+        window['home_weighted_margin'] = -window['visitor_weighted_margin']
+
+        current_date = window['date_game'].max()
+        season = window['season'].max()
+        print(current_date)
+
+        nba_table = Table(window, ['visitor_team_name', 'home_team_name', 'visitor_weighted_margin', 'home_weighted_margin'])
+        ranked = MasseyRanker(nba_table).rank()
+        ranked['ranking_date'] = current_date
+        ranked['ranking_id'] = i
+        ranked['season'] = season
+        new_frames.append(ranked)
+
+    ratings_df = pd.concat([existing_ratings_df] + new_frames, axis=0, sort=False).reset_index(drop=True)
+    ratings_df.sort_values(['ranking_id', 'name'], inplace=True)
+    ratings_df.drop_duplicates(keep="first", inplace=True)
+    ratings_df['ranking_date'] = pd.to_datetime(ratings_df['ranking_date']).dt.date
+
+    ratings_df.to_csv('duncan_ratings.csv', index=False)
+    print("CSV of power rankings is ready!")
+    return ratings_df
+
+
+# =========================================================
+# STANDINGS
+# =========================================================
+
+def _make_pivot(df, value_col, index_col, new_value_name, aggfunc=np.sum):
+    """Helper: pivot, fillna, reset index, and standardize column names."""
+    pivot = pd.pivot_table(df, values=value_col, index=[index_col], aggfunc=aggfunc)
+    return (
+        pivot.fillna(0)
+             .reset_index()
+             .rename(columns={value_col: new_value_name, index_col: 'name'})
+    )
+
+
+def compute_standings(master_df, existing_standings_df):
+    """
+    Compute cumulative season standings for each day in master_df.
+    Skips dates already present in existing_standings_df.
+    """
+    game_df = master_df[['season', 'date_game', 'grouped_date_id', 'visitor_team_name', 'visitor_win', 'home_team_name', 'home_win']]
+    max_date_id = max(master_df['grouped_date_id'])
+    min_date_id = ROLLING_WINDOW
+    max_ranked = max(existing_standings_df['ranking_id'])
+    min_ranked = min(existing_standings_df['ranking_id'])
+
+    print("Producing standings...")
+    new_frames = []
+
+    for i in range(min_date_id, max_date_id + 1):
+        if min_ranked <= i <= max_ranked:
+            continue
+
+        season_slice = game_df[game_df['grouped_date_id'] <= i]
+        season = season_slice['season'].max()
+        season_slice = season_slice[season_slice['season'] == season]
+        ranking_date = season_slice['date_game'].max()
+        print(ranking_date)
+
+        vw = _make_pivot(season_slice, 'visitor_win', 'visitor_team_name', 'visitor_wins')
+        vg = _make_pivot(season_slice, 'visitor_win', 'visitor_team_name', 'visitor_games', aggfunc='count')
+        hw = _make_pivot(season_slice, 'home_win',    'home_team_name',    'home_wins')
+        hg = _make_pivot(season_slice, 'home_win',    'home_team_name',    'home_games',    aggfunc='count')
+
+        merged = (
+            vw.merge(vg, on='name', how='outer')
+              .merge(hw, on='name', how='outer')
+              .merge(hg, on='name', how='outer')
+              .fillna(0)
+        )
+
+        merged['wins']   = (merged['visitor_wins'] + merged['home_wins']).astype(int)
+        merged['losses'] = (merged['visitor_games'] + merged['home_games'] - merged['wins']).astype(int)
+        merged['record'] = merged['wins'].map(str) + " - " + merged['losses'].map(str)
+        merged = merged[['name', 'wins', 'losses', 'record']]
+
+        merged['ranking_id']   = i
+        merged['ranking_date'] = ranking_date
+        merged['season']       = season
+        new_frames.append(merged)
+
+    standings_df = pd.concat([existing_standings_df] + new_frames, axis=0, sort=False).reset_index(drop=True)
+    standings_df.sort_values(['ranking_id', 'name'], inplace=True)
+    standings_df.drop_duplicates(keep="first", inplace=True)
+    standings_df['ranking_date'] = pd.to_datetime(standings_df['ranking_date']).dt.date
+
+    standings_df.to_csv('daily_standings.csv', index=False)
+    print("CSV of standings is ready!")
+    return standings_df
+
+
+# =========================================================
+# FINAL ASSEMBLY
+# =========================================================
+
+def _get_regular_season_end_date(master_df, season):
+    """
+    Estimate the last date of the regular season for a given season using
+    Option B: find the last date where every active team has played at or
+    under the expected regular season game count.
+    Falls back to SHORTENED_SEASON_OVERRIDES for lockout/COVID years.
+    """
+    threshold = SHORTENED_SEASON_OVERRIDES.get(season, REGULAR_SEASON_GAMES)
+    season_games = master_df[master_df['season'] == season].copy()
+
+    # Build cumulative game count per team per date
+    home = season_games[['date_game', 'home_team_name']].rename(columns={'home_team_name': 'team'})
+    away = season_games[['date_game', 'visitor_team_name']].rename(columns={'visitor_team_name': 'team'})
+    all_games = pd.concat([home, away]).sort_values('date_game')
+    all_games['team_game_num'] = all_games.groupby('team').cumcount() + 1
+
+    # Last date where no team has exceeded the threshold
+    within_rs = all_games[all_games['team_game_num'] <= threshold]
+    if within_rs.empty:
+        return None
+    return within_rs['date_game'].max()
+
+
+def assemble_final(master_df, ratings_df, standings_df):
+    """Merge ratings and standings, add flags and last-game context."""
+    print("Final step — merging DUNCAN ratings and standings...")
+
+    final_df = pd.merge(ratings_df, standings_df, how='left', on=['ranking_id', 'name'])
+    final_df.rename(columns={'ranking_date_x': 'date', 'season_x': 'season'}, inplace=True)
+    final_df['season'] = final_df['season'].astype(int)
+    final_df['record'] = final_df['record'].fillna("0 - 0")
+
+    # Flag the most recent date overall
+    latest_date_id = final_df['ranking_id'].max()
+    final_df['current_date'] = (final_df['ranking_id'] == latest_date_id).astype(int)
+
+    final_df['name_season'] = final_df['name'] + " - " + final_df['season'].map(str)
+
+    # -------------------------------------------------------------------------
+    # season_flag: 0 = regular season, 1 = last day of regular season,
+    #              2 = last day of postseason
+    # -------------------------------------------------------------------------
+    final_df['season_flag'] = 0
+
+    # NBA Finals end by late June; season YYYY (basketball-reference convention =
+    # season ending in calendar year YYYY) is fully complete after July 31 of that year.
+    today = datetime.now().date()
+    def season_is_fully_complete(season):
+        return today > datetime(int(season), 7, 31).date()
+
+    # Regular season is "done" once at least one team has played the threshold count
+    regular_season_complete = set()
+    for season in final_df['season'].unique():
+        sg = master_df[master_df['season'] == season]
+        if sg.empty:
+            continue
+        home = sg[['home_team_name']].rename(columns={'home_team_name': 'team'})
+        away = sg[['visitor_team_name']].rename(columns={'visitor_team_name': 'team'})
+        all_g = pd.concat([home, away])
+        threshold = SHORTENED_SEASON_OVERRIDES.get(season, REGULAR_SEASON_GAMES)
+        if all_g.groupby('team').size().min() >= threshold:
+            regular_season_complete.add(season)
+
+    # Last day of postseason — only for seasons where Finals are fully done
+    season_max_id = final_df.groupby('season')['ranking_id'].transform('max')
+    is_completed = final_df['season'].apply(season_is_fully_complete)
+    final_df['season_flag'] = np.where(
+        (final_df['ranking_id'] == season_max_id) & is_completed,
+        2,
+        0
+    )
+
+    # Last day of regular season — only for seasons where regular season has actually ended
+    for season in final_df['season'].unique():
+        if season not in regular_season_complete:
+            continue
+        rs_end_date = _get_regular_season_end_date(master_df, season)
+        if rs_end_date is None:
+            continue
+        rs_end_str = str(rs_end_date.date()) if hasattr(rs_end_date, 'date') else str(rs_end_date)
+        match = final_df[(final_df['season'] == season) & (final_df['date'].astype(str) == rs_end_str)]
+        if match.empty:
+            continue
+        rs_end_ranking_id = match['ranking_id'].max()
+        final_df['season_flag'] = np.where(
+            (final_df['season'] == season) &
+            (final_df['ranking_id'] == rs_end_ranking_id) &
+            (final_df['season_flag'] != 2),
+            1,
+            final_df['season_flag']
+        )
+
+    # -------------------------------------------------------------------------
+    # Champion & runner-up: look at the last game of each season
+    # -------------------------------------------------------------------------
+    final_df['champ'] = 0
+    final_df['runnerup'] = 0
+
+    for season in final_df['season'].unique():
+        season_games = master_df[master_df['season'] == season]
+        if season_games.empty:
+            continue
+        last_game_date = season_games['date_game'].max()
+        finals_game = season_games[season_games['date_game'] == last_game_date]
+
+        # Use the single game on the last day (the Finals clincher)
+        if len(finals_game) != 1:
+            continue
+
+        game = finals_game.iloc[0]
+        if game['home_win'] == 1:
+            champion = game['home_team_name']
+            runner_up = game['visitor_team_name']
+        else:
+            champion = game['visitor_team_name']
+            runner_up = game['home_team_name']
+
+        champ_season = f"{champion} - {season}"
+        runnerup_season = f"{runner_up} - {season}"
+
+        final_df['champ'] = np.where(final_df['name_season'] == champ_season, 1, final_df['champ'])
+        final_df['runnerup'] = np.where(final_df['name_season'] == runnerup_season, 1, final_df['runnerup'])
+
+    # Combined status column: 0 = neither, 1 = runner-up, 2 = champion
+    final_df['finals_status'] = final_df['runnerup'] + 2 * final_df['champ']
+
+    # -------------------------------------------------------------------------
+    # Last game result
+    # -------------------------------------------------------------------------
+    final_df['date_str'] = final_df['date'].astype(str)
+
+    lastgameh = (
+        master_df[['date_game', 'home_team_name', 'home_result', 'visitor_team_name']]
+        .rename(columns={'home_team_name': 'name', 'date_game': 'date_str'})
+        .assign(date_str=lambda d: d['date_str'].astype(str))
+    )
+    lastgamev = (
+        master_df[['date_game', 'visitor_team_name', 'visitor_result', 'home_team_name']]
+        .rename(columns={'visitor_team_name': 'name', 'date_game': 'date_str'})
+        .assign(date_str=lambda d: d['date_str'].astype(str))
+    )
+
+    final_df = final_df.merge(lastgameh, how='left', on=['date_str', 'name'])
+    final_df = final_df.merge(lastgamev, how='left', on=['date_str', 'name'])
+
+    for col in ['home_result', 'visitor_result', 'home_team_name', 'visitor_team_name']:
+        final_df[col] = final_df[col].fillna("")
+
+    final_df['last_game_result'] = (final_df['home_result'] + final_df['visitor_result']).replace("", "No Game")
+    final_df['opponent'] = final_df['home_team_name'] + final_df['visitor_team_name']
+
+    final_df = final_df[[
+        'ranking_id', 'date', 'season', 'name', 'rating', 'rank',
+        'record', 'current_date', 'season_flag', 'name_season',
+        'champ', 'runnerup', 'finals_status',
+        'last_game_result', 'opponent'
+    ]]
+
+    final_df.to_csv('duncan_ratings_with_standings.csv', index=False)
+    print("CSV of everything is ready!")
+    return final_df
+
+
+# =========================================================
+# MAIN
+# =========================================================
+
+if __name__ == "__main__":
+    max_season = datetime.now().year + 1
+
+    # 1. Scrape
+    existing_games = pd.read_csv("loaded_nba_games.csv")
+    raw_df = scrape_games(MIN_SEASON, max_season, existing_games)
+
+    # 2. Prepare game data
+    master_df = prepare_game_data(raw_df)
+
+    # 3. Ratings
+    existing_ratings = pd.read_csv("duncan_ratings.csv")
+    ratings_df = compute_ratings(master_df, existing_ratings)
+
+    # 4. Standings
+    existing_standings = pd.read_csv("daily_standings.csv")
+    standings_df = compute_standings(master_df, existing_standings)
+
+    # 5. Final merge
+    assemble_final(master_df, ratings_df, standings_df)
