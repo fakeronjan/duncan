@@ -310,8 +310,8 @@ for season in all_seasons:
 
 seasons_meta = {
     'seasons':    [int(s) for s in reversed(all_seasons)],
-    'first_date': str(df['date'].min()),
-    'last_date':  str(df['date'].max()),
+    'first_date': str(games['date_game'].min()),  # actual first game (not first rated date)
+    'last_date':  str(games['date_game'].max()),
 }
 with open('docs/data/seasons_index.json', 'w') as f:
     json.dump(seasons_meta, f, separators=(',', ':'))
@@ -387,9 +387,36 @@ for season in sorted(df['season'].unique(), reverse=True):
         },
     })
 
-# Running counts: walk chronologically (oldest first)
-_champ_count = {}
-_ru_count = {}
+# Pre-1980 NBA Finals counts (1947-1979), keyed by team name as it appears in our data.
+# Franchises that no longer exist or relocated under different names (e.g. Minneapolis
+# Lakers, Syracuse Nationals, St. Louis Hawks, Fort Wayne Pistons) are NOT carried over —
+# matches the city-name-separate philosophy used elsewhere in the site.
+PRE_1980_CHAMPIONSHIPS = {
+    'Boston Celtics':         13,  # 1957, 1959-66, 1968, 1969, 1974, 1976
+    'Los Angeles Lakers':      1,  # 1972
+    'Philadelphia 76ers':      1,  # 1967
+    'New York Knicks':         2,  # 1970, 1973
+    'Milwaukee Bucks':         1,  # 1971
+    'Golden State Warriors':   1,  # 1975
+    'Portland Trail Blazers':  1,  # 1977
+    'Washington Bullets':      1,  # 1978
+    'Seattle SuperSonics':     1,  # 1979
+}
+
+PRE_1980_RUNNER_UPS = {
+    'New York Knicks':         4,  # 1951, 1952, 1953, 1972
+    'Boston Celtics':          1,  # 1958
+    'Los Angeles Lakers':      8,  # 1962, 1963, 1965, 1966, 1968, 1969, 1970, 1973
+    'Milwaukee Bucks':         1,  # 1974
+    'Washington Bullets':      2,  # 1975, 1979
+    'Phoenix Suns':            1,  # 1976
+    'Philadelphia 76ers':      1,  # 1977
+    'Seattle SuperSonics':     1,  # 1978
+}
+
+# Running counts: walk chronologically (oldest first), seeded with pre-1980 totals
+_champ_count = dict(PRE_1980_CHAMPIONSHIPS)
+_ru_count    = dict(PRE_1980_RUNNER_UPS)
 for entry in reversed(champions):
     ct = entry['champion']['team']
     rt = entry['runner_up']['team']
