@@ -336,7 +336,8 @@ def assemble_final(master_df, ratings_df, standings_df):
     def season_is_fully_complete(season):
         return today > datetime(int(season), 7, 31).date()
 
-    # Regular season is "done" once at least one team has played the threshold count
+    # Regular season is "done" once any team has played the threshold count.
+    # (MIN would break for 2020 bubble — some teams didn't qualify for full schedule.)
     regular_season_complete = set()
     for season in final_df['season'].unique():
         sg = master_df[master_df['season'] == season]
@@ -346,7 +347,7 @@ def assemble_final(master_df, ratings_df, standings_df):
         away = sg[['visitor_team_name']].rename(columns={'visitor_team_name': 'team'})
         all_g = pd.concat([home, away])
         threshold = SHORTENED_SEASON_OVERRIDES.get(season, REGULAR_SEASON_GAMES)
-        if all_g.groupby('team').size().min() >= threshold:
+        if all_g.groupby('team').size().max() >= threshold:
             regular_season_complete.add(season)
 
     # Last day of postseason — only for seasons where Finals are fully done
