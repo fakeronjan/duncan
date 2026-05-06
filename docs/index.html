@@ -318,13 +318,13 @@ function fmtRecordStacked(reg, playoff) {
 }
 
 function fmtRecordSmart(reg, playoff, fallback) {
-  // Standings/Team Summary: show playoff split once playoffs have started,
-  // otherwise W-L with win pct. `fallback` covers the case where the JSON
-  // pre-dates regular_record (e.g., during a CDN cache transition).
+  // Standings/Team Summary: always show regular-season W-L with win pct on top.
+  // For playoff teams, add playoff W-L on a new line (no parens).
+  const top = fmtRecord(reg || fallback);
   const pm = playoff ? playoff.match(/^(\d+)-(\d+)$/) : null;
   const hasPlayoffs = pm && (parseInt(pm[1]) + parseInt(pm[2]) > 0);
-  if (hasPlayoffs) return fmtRecordStacked(reg || fallback, playoff);
-  return fmtRecord(reg || fallback);
+  if (!hasPlayoffs) return top;
+  return `${top}<div style="font-size:10px;color:#888;font-weight:400;line-height:1.2">${playoff}</div>`;
 }
 
 function finishBadge(finalsStatus) {
@@ -341,7 +341,7 @@ function resultClass(match) {
   return '';
 }
 
-const BAR_MIN = -3.5, BAR_MAX = 3.5, BAR_RANGE = 7.0;
+const BAR_MIN = -3, BAR_MAX = 3, BAR_RANGE = 6;
 
 function ratingBar(rating) {
   const clipped = Math.max(BAR_MIN, Math.min(BAR_MAX, rating));
@@ -576,7 +576,7 @@ function drawChart(rows, seasonFilter) {
   const H = 180;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-  const CHART_MIN = -3.5, CHART_MAX = 3.5;
+  const CHART_MIN = -3, CHART_MAX = 3;
   const CTOP = 10, CBOT = 152;
 
   const px = (i) => (i / (rows.length - 1)) * (W - 20) + 10;
