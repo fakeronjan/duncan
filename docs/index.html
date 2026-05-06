@@ -245,6 +245,9 @@
     </select>
     <span class="count-label" id="standings-count"></span>
   </div>
+  <p class="data-note" id="warmup-note" style="display:none">
+    Note: ratings need a 100 game-day warm-up window, so the 1980 season's first ranked snapshot is January 27.
+  </p>
   <div id="standings-table-wrap"><p class="loading">Loading standings...</p></div>
 </div>
 
@@ -405,6 +408,10 @@ async function loadSeason(season) {
       dateSel.appendChild(opt);
     });
     selectSnapshot(snaps[snaps.length - 1].date);
+
+    // Show warm-up note for 1980 (the first season; first 100 game-days are warm-up)
+    document.getElementById('warmup-note').style.display =
+      (parseInt(season) === 1980) ? 'block' : 'none';
   } catch(e) {
     document.getElementById('standings-table-wrap').innerHTML =
       `<p class="error">Could not load season data.</p>`;
@@ -701,6 +708,7 @@ function renderGoat() {
   const rows = goatData.map(t => `<tr>
     <td class="rank-cell">${displayRank++}</td>
     <td class="team-cell">${t.team}</td>
+    <td class="col-hide-mobile" style="font-size:11px;color:#888">${t.conference || ''}</td>
     <td>${t.season}</td>
     <td>${ratingBar(t.rating)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap" class="col-hide-mobile">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>
@@ -710,7 +718,9 @@ function renderGoat() {
   document.getElementById('goat-table-wrap').innerHTML = `
     <table>
       <thead><tr>
-        <th>All time rank</th><th>Team</th><th>Season</th>
+        <th>All time rank</th><th>Team</th>
+        <th class="col-hide-mobile">Conf</th>
+        <th>Season</th>
         <th>Rating</th>
         <th class="col-hide-mobile">W-L</th>
         <th class="col-hide-mobile">Honors</th>
