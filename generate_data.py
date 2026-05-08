@@ -177,6 +177,7 @@ standings_data = {
             'record':          clean(r['record']),
             'last_match':      clean(r['last_game_result']) if r['last_game_result'] != 'No Game' else last_game_as_of(r['name'], str(r['date'])),
             'finals_status':   int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
+            'cup_status':      int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
         }
         for _, r in latest.iterrows()
     ],
@@ -204,6 +205,7 @@ for i, (_, r) in enumerate(eos_top.iterrows()):
         'regular_record': reg,
         'playoff_record': playoff_record(r['record'], reg),
         'finals_status':  int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
+        'cup_status':     int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
     })
 with open('docs/data/goat_teams.json', 'w') as f:
     json.dump(goat_data, f, separators=(',', ':'))
@@ -249,6 +251,7 @@ for team in all_teams:
                 'season_flag':       int(r['season_flag']),
                 'is_playoff':        int(is_playoff(season, r['date'])),
                 'finals_status':     int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
+                'cup_status':        int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
             })
         seasons[int(season)] = entries
 
@@ -301,6 +304,7 @@ for season in all_seasons:
                 'last_match':      clean(r['last_game_result']) if played_today else last_game_as_of(r['name'], snap_date),
                 'last_match_date': snap_date if played_today else last_game_date_as_of(r['name'], snap_date),
                 'finals_status':   int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
+            'cup_status':      int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
             })
         snapshots.append({'date': snap_date, 'label': label, 'teams': teams_snap})
 

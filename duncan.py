@@ -42,6 +42,17 @@ SHORTENED_SEASON_OVERRIDES = {
     2020: 72,
 }
 
+# Emirates NBA Cup championship games. The NBA does NOT count this game in
+# the regular-season W-L record for either participant — both finalists
+# play 82 RS games on top of this one. The data still includes the game
+# (it's a real on-court signal for ratings) but standings exclude it.
+# Season uses the calendar year of the Finals (2024 = the 2023-24 season).
+NBA_CUP_FINAL_DATES = {
+    '2023-12-09',  # 2023-24 NBA Cup
+    '2024-12-17',  # 2024-25 NBA Cup
+    '2025-12-16',  # 2025-26 NBA Cup
+}
+
 # =========================================================
 # SCRAPING
 # =========================================================
@@ -161,6 +172,9 @@ def prepare_game_data(raw_df):
         + df['visitor_pts'].map(str) + "-" + df['home_pts'].map(str)
     )
 
+    # Flag NBA Cup championship games (excluded from regular-season W-L counts).
+    df['is_nba_cup_final'] = df['date_game'].astype(str).isin(NBA_CUP_FINAL_DATES).astype(int)
+
     df.to_csv('all_nba_games.csv', index=False)
     print("CSV of NBA games is ready!")
     return df
@@ -236,11 +250,21 @@ def compute_standings(master_df, existing_standings_df):
     Compute cumulative season standings for each day in master_df.
     Skips dates already present in existing_standings_df.
     """
-    game_df = master_df[['season', 'date_game', 'grouped_date_id', 'visitor_team_name', 'visitor_win', 'home_team_name', 'home_win']]
+    # NBA Cup championship games don't count in regular-season W-L by NBA rule —
+    # exclude them from the games counted for standings (still in the rating data).
+    cols_needed = ['season', 'date_game', 'grouped_date_id', 'visitor_team_name', 'visitor_win', 'home_team_name', 'home_win']
+    if 'is_nba_cup_final' in master_df.columns:
+        game_df = master_df[master_df['is_nba_cup_final'] != 1][cols_needed]
+    else:
+        game_df = master_df[cols_needed]
     max_date_id = max(master_df['grouped_date_id'])
     min_date_id = ROLLING_WINDOW
-    max_ranked = max(existing_standings_df['ranking_id'])
-    min_ranked = min(existing_standings_df['ranking_id'])
+    if len(existing_standings_df) > 0 and 'ranking_id' in existing_standings_df.columns:
+        max_ranked = int(max(existing_standings_df['ranking_id']))
+        min_ranked = int(min(existing_standings_df['ranking_id']))
+    else:
+        max_ranked = -1
+        min_ranked = -1
 
     print("Producing standings...")
     new_frames = []
@@ -419,6 +443,27 @@ def assemble_final(master_df, ratings_df, standings_df):
     final_df['finals_status'] = final_df['runnerup'] + 2 * final_df['champ']
 
     # -------------------------------------------------------------------------
+    # NBA Cup champion & runner-up (since 2023-24)
+    # -------------------------------------------------------------------------
+    final_df['cup_champ']    = 0
+    final_df['cup_runnerup'] = 0
+
+    if 'is_nba_cup_final' in master_df.columns:
+        cup_finals = master_df[master_df['is_nba_cup_final'] == 1]
+        for _, game in cup_finals.iterrows():
+            if game['home_win'] == 1:
+                champion, runner_up = game['home_team_name'], game['visitor_team_name']
+            else:
+                champion, runner_up = game['visitor_team_name'], game['home_team_name']
+            champ_ns    = f"{champion} - {game['season']}"
+            runnerup_ns = f"{runner_up} - {game['season']}"
+            final_df['cup_champ']    = np.where(final_df['name_season'] == champ_ns,    1, final_df['cup_champ'])
+            final_df['cup_runnerup'] = np.where(final_df['name_season'] == runnerup_ns, 1, final_df['cup_runnerup'])
+
+    # 0 = neither, 1 = cup runner-up, 2 = cup champion
+    final_df['cup_status'] = final_df['cup_runnerup'] + 2 * final_df['cup_champ']
+
+    # -------------------------------------------------------------------------
     # Last game result
     # -------------------------------------------------------------------------
     final_df['date_str'] = final_df['date'].astype(str)
@@ -447,6 +492,7 @@ def assemble_final(master_df, ratings_df, standings_df):
         'ranking_id', 'date', 'season', 'name', 'rating', 'rank',
         'record', 'current_date', 'season_flag', 'name_season',
         'champ', 'runnerup', 'finals_status',
+        'cup_champ', 'cup_runnerup', 'cup_status',
         'last_game_result', 'opponent'
     ]]
 
@@ -474,7 +520,10 @@ if __name__ == "__main__":
     ratings_df = compute_ratings(master_df, existing_ratings)
 
     # 4. Standings
-    existing_standings = pd.read_csv("daily_standings.csv")
+    try:
+        existing_standings = pd.read_csv("daily_standings.csv")
+    except FileNotFoundError:
+        existing_standings = pd.DataFrame(columns=['name', 'wins', 'losses', 'record', 'ranking_id', 'ranking_date', 'season'])
     standings_df = compute_standings(master_df, existing_standings)
 
     # 5. Final merge
