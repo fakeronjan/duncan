@@ -379,6 +379,7 @@ for season in sorted(df['season'].unique(), reverse=True):
             'record':         clean(cr['record']),
             'regular_record': champ_reg,
             'playoff_record': playoff_record(cr['record'], champ_reg),
+            'cup_status':     int(cr['cup_status']) if 'cup_status' in cr and not pd.isna(cr['cup_status']) else 0,
         },
         'runner_up': {
             'team':           rr['name'],
@@ -388,6 +389,7 @@ for season in sorted(df['season'].unique(), reverse=True):
             'record':         clean(rr['record']),
             'regular_record': ru_reg,
             'playoff_record': playoff_record(rr['record'], ru_reg),
+            'cup_status':     int(rr['cup_status']) if 'cup_status' in rr and not pd.isna(rr['cup_status']) else 0,
         },
     })
 

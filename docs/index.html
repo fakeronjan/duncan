@@ -673,8 +673,13 @@ function renderChampions() {
       : t.runner_up_count
       ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.runner_up_count} 🥈)</span>`
       : '';
+    const cupBadge = t.cup_status === 2
+      ? ` <span class="finish-badge finish-champion" title="NBA Cup Champion">Cup 🏆</span>`
+      : t.cup_status === 1
+      ? ` <span class="finish-badge finish-runner" title="NBA Cup Runner-Up">Cup 🥈</span>`
+      : '';
     return `
-      <td class="${bg} team-cell" style="white-space:nowrap">${t.team}${countStr}</td>
+      <td class="${bg} team-cell" style="white-space:nowrap">${t.team}${countStr}${cupBadge}</td>
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
       <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>`;
