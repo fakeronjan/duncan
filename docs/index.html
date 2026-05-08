@@ -331,8 +331,8 @@ function finishBadge(finalsStatus, cupStatus) {
   const bits = [];
   if (finalsStatus === 2) bits.push(`<span title="NBA Champion" style="font-size:14px">🏆</span>`);
   else if (finalsStatus === 1) bits.push(`<span title="NBA Runner-Up" style="font-size:14px">🥈</span>`);
-  if (cupStatus === 2) bits.push(`<span title="NBA Cup Champion" style="font-size:11px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;padding:1px 5px;border-radius:3px;font-weight:600">CUP 🏆</span>`);
-  else if (cupStatus === 1) bits.push(`<span title="NBA Cup Runner-Up" style="font-size:11px;background:#f5f5f5;color:#777;border:1px solid #ccc;padding:1px 5px;border-radius:3px">CUP 🥈</span>`);
+  if (cupStatus === 2) bits.push(`<span class="finish-badge finish-champion" title="NBA Cup Champion">Cup 🏆</span>`);
+  else if (cupStatus === 1) bits.push(`<span class="finish-badge finish-runner" title="NBA Cup Runner-Up">Cup 🥈</span>`);
   return bits.join(' ');
 }
 
