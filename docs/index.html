@@ -93,6 +93,26 @@
     margin-left: auto;
   }
 
+  .conf-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .conf-pills button {
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #155a75;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+  }
+  .conf-pills button:hover { background: #fafafa; }
+  .conf-pills button.active { background: #1a6b8a; color: #ff6eb4; border-color: #1a6b8a; }
+
   table {
     width: 100%;
     border-collapse: collapse;
@@ -221,6 +241,7 @@
     .last-match-cell { max-width: 180px; }
     .controls { flex-direction: column; align-items: stretch; }
     select { min-width: unset; width: 100%; }
+    .conf-pills button { font-size: 11px; padding: 5px 9px; }
     .rating-bar-track { display: none; }
     .col-hide-mobile { display: none; }
   }
@@ -245,14 +266,10 @@
 
 <!-- ── STANDINGS ────────────────────────────────────────────────────────── -->
 <div id="standings" class="tab active">
+  <div class="conf-pills" id="standings-conf-pills"></div>
   <div class="controls">
     <select id="season-filter"></select>
     <select id="date-filter" style="min-width:240px"></select>
-    <select id="conference-filter">
-      <option value="all">Both Conferences</option>
-      <option value="East">East</option>
-      <option value="West">West</option>
-    </select>
     <span class="count-label" id="standings-count"></span>
   </div>
   <p class="data-note" id="warmup-note" style="display:none">
@@ -263,6 +280,7 @@
 
 <!-- ── TEAM SUMMARY ─────────────────────────────────────────────────────── -->
 <div id="team-summary" class="tab">
+  <div class="conf-pills" id="ts-conf-pills"></div>
   <div class="controls">
     <select id="team-select"><option value="">— Select a team —</option></select>
     <select id="season-select"><option value="all">All Seasons</option></select>
@@ -292,6 +310,7 @@
 <!-- ── GOAT TABLE ───────────────────────────────────────────────────────── -->
 <div id="goat" class="tab">
   <p class="data-note">Top 50 single-season ratings · Data covers 1980 through the current season</p>
+  <div class="conf-pills" id="goat-conf-pills"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
 </div>
 
@@ -302,6 +321,31 @@ let currentSnapshot   = null;
 let goatData          = null;
 let teamsIndex        = null;
 let teamCache         = {};
+
+// ── Conference filter pillbox (shared across Standings / TS / GOAT) ─────────
+const CONFERENCES = ['East', 'West'];
+let standingsConf = 'all';
+let tsConf        = 'all';
+let goatConf      = 'all';
+
+function buildConfPills(containerId, current, onSelect) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const opts = [{ value: 'all', label: 'All' }, ...CONFERENCES.map(c => ({ value: c, label: c }))];
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.textContent = o.label;
+    b.dataset.conf = o.value;
+    if (o.value === current) b.classList.add('active');
+    b.addEventListener('click', () => {
+      wrap.querySelectorAll('button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      onSelect(o.value);
+    });
+    wrap.appendChild(b);
+  });
+}
 
 // ── Utilities ───────────────────────────────────────────────────────────────
 function fmtRecord(rec) {
@@ -397,7 +441,7 @@ document.querySelectorAll('nav button').forEach(btn => {
 // ── Standings ────────────────────────────────────────────────────────────────
 function fmtDate(ds) {
   const d = new Date(ds + 'T00:00:00');
-  return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+  return d.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'});
 }
 
 // NBA seasons are stored as the calendar year of the Finals (e.g. 2024 = the
@@ -466,7 +510,7 @@ function selectSnapshot(date) {
 
 function renderStandings() {
   if (!currentSnapshot) return;
-  const conf = document.getElementById('conference-filter').value;
+  const conf = standingsConf;
   let teams = currentSnapshot.teams;
   if (conf !== 'all') teams = teams.filter(t => t.conference === conf);
 
@@ -507,20 +551,28 @@ function renderStandings() {
 
 document.getElementById('season-filter').addEventListener('change', e => loadSeason(e.target.value));
 document.getElementById('date-filter').addEventListener('change', e => selectSnapshot(e.target.value));
-document.getElementById('conference-filter').addEventListener('change', renderStandings);
 
 // ── Team Summary ─────────────────────────────────────────────────────────────
+function populateTeamSelect() {
+  if (!teamsIndex) return;
+  const sel = document.getElementById('team-select');
+  const filtered = tsConf === 'all'
+    ? teamsIndex
+    : teamsIndex.filter(t => t.conference === tsConf);
+  sel.innerHTML = '<option value="">— Select a team —</option>';
+  filtered.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.slug;
+    opt.textContent = t.name;
+    sel.appendChild(opt);
+  });
+}
+
 async function loadTeamsIndex() {
   try {
     const res = await fetch(`${BASE}/teams_index.json`);
     teamsIndex = await res.json();
-    const sel = document.getElementById('team-select');
-    teamsIndex.forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t.slug;
-      opt.textContent = t.name;
-      sel.appendChild(opt);
-    });
+    populateTeamSelect();
   } catch(e) {
     document.getElementById('team-select').innerHTML =
       '<option>Could not load teams</option>';
@@ -751,8 +803,12 @@ async function loadGoat() {
 }
 
 function renderGoat() {
+  if (!goatData) return;
+  const teams = goatConf === 'all'
+    ? goatData
+    : goatData.filter(t => t.conference === goatConf);
   let displayRank = 1;
-  const rows = goatData.map(t => `<tr>
+  const rows = teams.map(t => `<tr>
     <td class="rank-cell">${displayRank++}</td>
     <td style="text-align:center">${fmtSeason(t.season)}</td>
     <td class="team-cell">${t.team}</td>
@@ -778,6 +834,9 @@ function renderGoat() {
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
+buildConfPills('standings-conf-pills', standingsConf, v => { standingsConf = v; renderStandings(); });
+buildConfPills('ts-conf-pills',        tsConf,        v => { tsConf = v; populateTeamSelect(); });
+buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; renderGoat(); });
 initStandings();
 loadTeamsIndex();
 loadChampions();
