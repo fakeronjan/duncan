@@ -807,9 +807,8 @@ function renderGoat() {
   const teams = goatConf === 'all'
     ? goatData
     : goatData.filter(t => t.conference === goatConf);
-  let displayRank = 1;
   const rows = teams.map(t => `<tr>
-    <td class="rank-cell">${displayRank++}</td>
+    <td class="rank-cell">${t.rank}</td>
     <td style="text-align:center">${fmtSeason(t.season)}</td>
     <td class="team-cell">${t.team}</td>
     <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
