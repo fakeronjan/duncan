@@ -667,7 +667,7 @@ function renderChampions() {
   function teamCell(t, bg) {
     if (!t) return `<td class="${bg}" colspan="3">—</td>`;
     const rating = t.rating != null ? t.rating.toFixed(2) : '—';
-    const rank   = t.rank   != null ? `#${t.rank}` : '—';
+    const rank   = t.rank   != null ? `${t.rank}` : '—';
     const countStr = t.title_count
       ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.title_count} 🏆)</span>`
       : t.runner_up_count
