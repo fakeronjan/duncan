@@ -10,6 +10,7 @@ Mirrors the LOBO/ZIDANE site architecture, with NBA-specific tweaks:
 import pandas as pd
 import json
 import os
+from datetime import datetime, timezone
 import re
 from bisect import bisect_right
 
@@ -316,6 +317,7 @@ seasons_meta = {
     'seasons':    [int(s) for s in reversed(all_seasons)],
     'first_date': str(games['date_game'].min()),  # actual first game (not first rated date)
     'last_date':  str(games['date_game'].max()),
+    'generated_at': datetime.now(timezone.utc).isoformat(),
 }
 with open('docs/data/seasons_index.json', 'w') as f:
     json.dump(seasons_meta, f, separators=(',', ':'))
