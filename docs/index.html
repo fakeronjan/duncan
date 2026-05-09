@@ -514,12 +514,11 @@ function renderStandings() {
   let teams = currentSnapshot.teams;
   if (conf !== 'all') teams = teams.filter(t => t.conference === conf);
 
-  // When filtered by conference, show conference rank; otherwise overall rank
-  let displayRank = 1;
+  // Preserve the all-time/league-wide rank when filtered (gaps are informative —
+  // they show where filtered-out teams sit). Same pattern as GOAT and DILLON.
   const rows = teams.map(t => {
-    const rk = (conf === 'all') ? t.rank : displayRank++;
     return `<tr>
-      <td class="rank-cell">${rk}</td>
+      <td class="rank-cell">${t.rank}</td>
       <td class="team-cell">${t.team}</td>
       <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record, t.record)}</td>
