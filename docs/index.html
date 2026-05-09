@@ -200,8 +200,10 @@
     color: #555;
     max-width: 240px;
   }
-  .result-W { color: #2e7d32; font-weight: 700; }
-  .result-L { color: #c62828; font-weight: 700; }
+  .result-W       { color: #2e7d32; font-weight: 700; }
+  .result-L       { color: #c62828; font-weight: 700; }
+  .result-W-stale { color: #2e7d32; font-weight: 400; }
+  .result-L-stale { color: #c62828; font-weight: 400; }
 
   /* Season chart */
   #chart-wrap {
@@ -399,11 +401,12 @@ function finishBadge(finalsStatus, cupStatus) {
   return bits.join(' ');
 }
 
-function resultClass(match) {
+function resultClass(match, isStale) {
   if (!match) return '';
   const first = match[0];
-  if (first === 'W') return 'result-W';
-  if (first === 'L') return 'result-L';
+  const suffix = isStale ? '-stale' : '';
+  if (first === 'W') return 'result-W' + suffix;
+  if (first === 'L') return 'result-L' + suffix;
   return '';
 }
 
@@ -488,7 +491,7 @@ async function loadSeason(season) {
     [...snaps].reverse().forEach(snap => {
       const opt = document.createElement('option');
       opt.value = snap.date;
-      opt.textContent = snap.label ? `${snap.date} — ${snap.label}` : snap.date;
+      opt.textContent = snap.label ? `${snap.date} | ${snap.label}` : snap.date;
       dateSel.appendChild(opt);
     });
     selectSnapshot(snaps[snaps.length - 1].date);
@@ -514,9 +517,14 @@ function renderStandings() {
   let teams = currentSnapshot.teams;
   if (conf !== 'all') teams = teams.filter(t => t.conference === conf);
 
+  const snaps = currentSeasonData.snapshots;
+  const idx = snaps.findIndex(s => s.date === currentSnapshot.date);
+  const prevDate = idx > 0 ? snaps[idx - 1].date : null;
+
   // Preserve the all-time/league-wide rank when filtered (gaps are informative —
   // they show where filtered-out teams sit). Same pattern as GOAT and DILLON.
   const rows = teams.map(t => {
+    const isStale = !!(prevDate && t.last_match_date && t.last_match_date <= prevDate);
     return `<tr>
       <td class="rank-cell">${t.rank}</td>
       <td class="team-cell">${t.team}</td>
@@ -524,7 +532,7 @@ function renderStandings() {
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record, t.record)}</td>
       <td>${ratingBar(t.rating)}</td>
       <td class="last-match-cell">
-        <span class="${resultClass(t.last_match)}">${t.last_match || '—'}</span>
+        <span class="${resultClass(t.last_match, isStale)}">${t.last_match || '—'}</span>
       </td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
       <td class="col-hide-mobile" style="text-align:center">${finishBadge(t.finals_status, t.cup_status)}</td>
