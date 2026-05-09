@@ -347,7 +347,7 @@ function confBadge(conf, finalsStatus) {
 
 function finishBadge(finalsStatus, cupStatus) {
   const bits = [];
-  if (finalsStatus === 2) bits.push(`<span title="NBA Champion" style="font-size:14px">🏆</span>`);
+  if (finalsStatus === 2) bits.push(`<span title="NBA Champion" style="font-size:14px">👑</span>`);
   else if (finalsStatus === 1) bits.push(`<span title="NBA Runner-Up" style="font-size:14px">🥈</span>`);
   if (cupStatus === 2) bits.push(`<span class="finish-badge finish-champion" title="NBA Cup Champion">Cup 🏆</span>`);
   else if (cupStatus === 1) bits.push(`<span class="finish-badge finish-runner" title="NBA Cup Runner-Up">Cup 🥈</span>`);
@@ -689,7 +689,7 @@ function renderChampions() {
     const rating = t.rating != null ? t.rating.toFixed(2) : '—';
     const rank   = t.rank   != null ? `${t.rank}` : '—';
     const countStr = t.title_count
-      ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.title_count} 🏆)</span>`
+      ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.title_count} 👑)</span>`
       : t.runner_up_count
       ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.runner_up_count} 🥈)</span>`
       : '';
