@@ -11,7 +11,7 @@ import numpy as np
 if not hasattr(np, 'int'):   np.int = int
 if not hasattr(np, 'float'): np.float = float
 if not hasattr(np, 'bool'):  np.bool = bool
-from datetime import datetime
+from datetime import datetime, date
 import warnings
 import rankit  # pip install rankit
 from rankit.Table import Table
@@ -409,8 +409,44 @@ def assemble_final(master_df, ratings_df, standings_df):
         )
 
     # -------------------------------------------------------------------------
-    # Champion & runner-up: look at the last game of each season
+    # Champion & runner-up: detect the Finals series structurally.
     # -------------------------------------------------------------------------
+    # NBA Finals = best-of-7 between two specific teams. We declare a champion
+    # only when:
+    #   1. One team has won 4+ head-to-head games against another within the
+    #      last 21 days (the BO7 clinch threshold), AND
+    #   2. The last game on file is at least 7 days old. This gates out the
+    #      Eastern/Western Conference Finals — also BO7, also clinch at 4 —
+    #      which end ~5-10 days before NBA Finals start. Without this gate,
+    #      the algorithm would briefly mis-label a conference-final winner as
+    #      the league champion in the gap between rounds.
+    def detect_finals_champion(season_games):
+        sg = season_games.sort_values('date_game')
+        if sg.empty:
+            return None, None
+        last = sg.iloc[-1]
+        last_date = pd.to_datetime(last['date_game']).date()
+        if (date.today() - last_date).days < 7:
+            return None, None
+        a = last['home_team_name']
+        b = last['visitor_team_name']
+        last_dt = pd.Timestamp(last_date)
+        window_start = last_dt - pd.Timedelta(days=21)
+        sg_dt = pd.to_datetime(sg['date_game'])
+        h2h = sg[
+            (sg_dt >= window_start) & (sg_dt <= last_dt) &
+            (((sg['home_team_name'] == a) & (sg['visitor_team_name'] == b)) |
+             ((sg['home_team_name'] == b) & (sg['visitor_team_name'] == a)))
+        ]
+        a_wins = (((h2h['home_team_name'] == a) & (h2h['home_win'] == 1)) |
+                  ((h2h['visitor_team_name'] == a) & (h2h['home_win'] == 0))).sum()
+        b_wins = len(h2h) - a_wins
+        if a_wins >= 4:
+            return a, b
+        if b_wins >= 4:
+            return b, a
+        return None, None
+
     final_df['champ'] = 0
     final_df['runnerup'] = 0
 
@@ -418,20 +454,9 @@ def assemble_final(master_df, ratings_df, standings_df):
         season_games = master_df[master_df['season'] == season]
         if season_games.empty:
             continue
-        last_game_date = season_games['date_game'].max()
-        finals_game = season_games[season_games['date_game'] == last_game_date]
-
-        # Use the single game on the last day (the Finals clincher)
-        if len(finals_game) != 1:
+        champion, runner_up = detect_finals_champion(season_games)
+        if champion is None:
             continue
-
-        game = finals_game.iloc[0]
-        if game['home_win'] == 1:
-            champion = game['home_team_name']
-            runner_up = game['visitor_team_name']
-        else:
-            champion = game['visitor_team_name']
-            runner_up = game['home_team_name']
 
         champ_season = f"{champion} - {season}"
         runnerup_season = f"{runner_up} - {season}"
