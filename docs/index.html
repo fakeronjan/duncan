@@ -173,6 +173,7 @@
   }
   .finish-champion { background: #c8a84b; color: #1a6b8a; }
   .finish-runner   { background: #ddd; color: #444; }
+  .conf-pill       { background: #f4f4f4; color: #555; border: 1px solid #e8e8e8; }
 
   .last-match-cell {
     font-size: 12px;
@@ -335,6 +336,15 @@ function fmtRecordSmart(reg, playoff, fallback) {
   return `${top}<div style="font-size:10px;color:#888;font-weight:400;line-height:1.2">${playoff}</div>`;
 }
 
+function confBadge(conf, finalsStatus) {
+  if (!conf) return '';
+  // finals_status >= 1 means the team made the Finals = won the conference championship round
+  if (finalsStatus >= 1) {
+    return `<span class="finish-badge finish-champion" title="${conf} Champion">${conf} 🏆</span>`;
+  }
+  return `<span class="finish-badge conf-pill">${conf}</span>`;
+}
+
 function finishBadge(finalsStatus, cupStatus) {
   const bits = [];
   if (finalsStatus === 2) bits.push(`<span title="NBA Champion" style="font-size:14px">🏆</span>`);
@@ -461,7 +471,7 @@ function renderStandings() {
     return `<tr>
       <td class="rank-cell">${rk}</td>
       <td class="team-cell">${t.team}</td>
-      <td class="col-hide-mobile" style="font-size:11px;color:#888">${t.conference}</td>
+      <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record, t.record)}</td>
       <td>${ratingBar(t.rating)}</td>
       <td class="last-match-cell">
@@ -573,6 +583,7 @@ function renderTeamTable() {
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record, g.record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating)}</td>
+    <td class="col-hide-mobile" style="font-size:11px">${confBadge(data.conference, g.finals_status)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(g.finals_status, g.cup_status)}</td>
   </tr>`).join('');
 
@@ -581,6 +592,7 @@ function renderTeamTable() {
       <thead><tr>
         <th>Date</th><th>Season</th><th>Last Game</th>
         <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
+        <th class="col-hide-mobile">Conf</th>
         <th class="col-hide-mobile">Honors</th>
       </tr></thead>
       <tbody>${tableRows}</tbody>
@@ -710,7 +722,7 @@ function renderChampions() {
         <th class="col-champ col-hide-mobile">Rank</th>
         <th class="col-champ">Rating</th>
         <th class="col-champ col-hide-mobile">W-L</th>
-        <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Final<br>(Series)</th>
+        <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Score<br>(Series)</th>
         <th class="col-ru">Runner-Up</th>
         <th class="col-ru col-hide-mobile">Rank</th>
         <th class="col-ru">Rating</th>
@@ -738,7 +750,7 @@ function renderGoat() {
     <td class="rank-cell">${displayRank++}</td>
     <td style="text-align:center">${fmtSeason(t.season)}</td>
     <td class="team-cell">${t.team}</td>
-    <td class="col-hide-mobile" style="font-size:11px;color:#888">${t.conference || ''}</td>
+    <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
     <td>${ratingBar(t.rating)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap" class="col-hide-mobile">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(t.finals_status, t.cup_status)}</td>
