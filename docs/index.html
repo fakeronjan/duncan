@@ -288,7 +288,8 @@
     <select id="season-select"><option value="all">All Seasons</option></select>
     <select id="date-type-select">
       <option value="all">All dates</option>
-      <option value="eos">End of season</option>
+      <option value="eor">End of regular season</option>
+      <option value="eos">End of playoffs</option>
     </select>
     <select id="scope-select">
       <option value="full">Include playoffs</option>
@@ -636,11 +637,9 @@ function renderTeamTable() {
   // Scope filter: regular season excludes playoffs
   if (scope === 'regular') rows = rows.filter(g => !g.is_playoff);
 
-  // End-of-season filter: pick the right season_flag based on scope
-  if (dateType === 'eos') {
-    const flag = scope === 'regular' ? 1 : 2;
-    rows = rows.filter(g => g.season_flag === flag);
-  }
+  // Date-type filter: explicit selection of regular-season-end vs playoffs-end snapshot
+  if (dateType === 'eor')      rows = rows.filter(g => g.season_flag === 1);
+  else if (dateType === 'eos') rows = rows.filter(g => g.season_flag === 2);
 
   drawChart(rows, seasonFilter);
 
