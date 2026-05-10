@@ -293,7 +293,7 @@ def compute_standings(master_df, existing_standings_df):
 
         merged['wins']   = (merged['visitor_wins'] + merged['home_wins']).astype(int)
         merged['losses'] = (merged['visitor_games'] + merged['home_games'] - merged['wins']).astype(int)
-        merged['record'] = merged['wins'].map(str) + " - " + merged['losses'].map(str)
+        merged['record'] = merged['wins'].map(str) + "-" + merged['losses'].map(str)
         merged = merged[['name', 'wins', 'losses', 'record']]
 
         merged['ranking_id']   = i
