@@ -351,13 +351,13 @@ function buildConfPills(containerId, current, onSelect) {
 
 // ── Utilities ───────────────────────────────────────────────────────────────
 function fmtRecord(rec) {
-  // NBA records come in as "12 - 10" (W - L). Show win pct in dimmed parens.
+  // NBA records come in as "12-10" (W-L). Show win pct in dimmed parens.
   if (!rec || rec === '—') return rec || '—';
   const m = rec.match(/^(\d+)\s*-\s*(\d+)$/);
   if (!m) return rec;
   const w = parseInt(m[1]);
   const l = parseInt(m[2]);
-  if (w + l === 0) return rec;
+  if (w + l === 0) return `${w}-${l}`;
   const pct = (w / (w + l)).toFixed(3).replace(/^0/, '');
   return `${w}-${l} <span style="color:#888;font-size:0.85em">(${pct})</span>`;
 }
@@ -532,7 +532,7 @@ function renderStandings() {
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record, t.record)}</td>
       <td>${ratingBar(t.rating)}</td>
       <td class="last-match-cell">
-        <span class="${resultClass(t.last_match, isStale)}">${t.last_match || '—'}</span>
+        <span class="${resultClass(t.last_match, isStale)}">${t.last_match || '-'}</span>
       </td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
       <td class="col-hide-mobile" style="text-align:center">${finishBadge(t.finals_status, t.cup_status)}</td>
@@ -643,7 +643,7 @@ function renderTeamTable() {
     <td style="white-space:nowrap;color:#888;font-size:12px">${g.date}</td>
     <td style="font-size:11px;color:#555">${fmtSeason(g.season)}</td>
     <td class="last-match-cell">
-      <span class="${resultClass(g.last_match)}">${g.last_match || '—'}</span>
+      <span class="${resultClass(g.last_match)}">${g.last_match || '-'}</span>
     </td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record, g.record)}</td>
     <td class="rank-cell">${g.rank}</td>
