@@ -345,7 +345,7 @@ def assemble_final(master_df, ratings_df, standings_df):
     final_df = pd.merge(ratings_df, standings_df, how='left', on=['ranking_id', 'name'])
     final_df.rename(columns={'ranking_date_x': 'date', 'season_x': 'season'}, inplace=True)
     final_df['season'] = final_df['season'].astype(int)
-    final_df['record'] = final_df['record'].fillna("0 - 0")
+    final_df['record'] = final_df['record'].fillna("0-0")
 
     # Flag the most recent date overall
     latest_date_id = final_df['ranking_id'].max()
@@ -510,7 +510,7 @@ def assemble_final(master_df, ratings_df, standings_df):
     for col in ['home_result', 'visitor_result', 'home_team_name', 'visitor_team_name']:
         final_df[col] = final_df[col].fillna("")
 
-    final_df['last_game_result'] = (final_df['home_result'] + final_df['visitor_result']).replace("", "No Game")
+    final_df['last_game_result'] = (final_df['home_result'] + final_df['visitor_result'])
     final_df['opponent'] = final_df['home_team_name'] + final_df['visitor_team_name']
 
     final_df = final_df[[
