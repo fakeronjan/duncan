@@ -201,10 +201,12 @@ with open('docs/data/current_standings.json', 'w') as f:
     json.dump(standings_data, f, separators=(',', ':'))
 
 # ── 2. GOAT table ─────────────────────────────────────────────────────────────
-# Only include fully-complete seasons (flag=2 = Finals ended). Excludes
-# in-progress seasons whose regular season is done but Finals haven't started/finished.
+# Only include fully-complete seasons (flag=2 = Finals ended) AND teams that
+# reached the Finals (finals_status >= 1). Filter applied because GOAT is
+# canonically "best championship-contending teams" — strong regular-season
+# teams that flamed out before the Finals are noise in this view.
 print("Writing goat_teams.json...")
-eos_all = df[df['season_flag'] == 2].copy()
+eos_all = df[(df['season_flag'] == 2) & (df['finals_status'] >= 1)].copy()
 eos_top = eos_all.sort_values('rating', ascending=False).head(50).reset_index(drop=True)
 
 goat_data = []
