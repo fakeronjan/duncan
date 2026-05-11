@@ -59,6 +59,27 @@ NBA_CUP_FINAL_DATES = {
     '2025-12-16',  # 2025-26 NBA Cup
 }
 
+# Same-market rebrand consolidation. Maps historical team names to current
+# canonical names so a single franchise's history reads as one team across
+# rebrands. RELOCATIONS are deliberately kept separate ("move the team =
+# lose the history" policy): Baltimore Colts → Indianapolis, Kansas City
+# Kings → Sacramento, Seattle SuperSonics → OKC, San Diego Clippers → LA,
+# Vancouver Grizzlies → Memphis, NJ Nets → Brooklyn, etc. all remain
+# distinct from their post-move franchises.
+#
+# Charlotte note: the original Charlotte Hornets (1989-2002) relocated to
+# New Orleans in 2002. The modern Charlotte Hornets (2014+) are the
+# rebranded Bobcats franchise, which the NBA officially credits with the
+# 1989-2002 Hornets history. Our source data already merges those two
+# eras under "Charlotte Hornets" (same LA-Rams-style quirk we accepted
+# earlier) — we just consolidate Bobcats on top of that.
+TEAM_ALIASES = {
+    'Washington Bullets':                'Washington Wizards',
+    'Charlotte Bobcats':                  'Charlotte Hornets',
+    'New Orleans Hornets':                'New Orleans Pelicans',
+    'New Orleans/Oklahoma City Hornets':  'New Orleans Pelicans',
+}
+
 # =========================================================
 # SCRAPING
 # =========================================================
@@ -131,6 +152,13 @@ def prepare_game_data(raw_df):
 
     df['visitor_pts'] = pd.to_numeric(df['visitor_pts'])
     df['home_pts'] = pd.to_numeric(df['home_pts'])
+
+    # Apply same-market rebrand consolidation before any team-keyed work
+    # (margins, result strings, downstream merges). Old names show up
+    # rendered as the franchise's current name everywhere internally;
+    # generate_data.py re-applies an era-appropriate display label per row.
+    df['visitor_team_name'] = df['visitor_team_name'].replace(TEAM_ALIASES)
+    df['home_team_name']    = df['home_team_name'].replace(TEAM_ALIASES)
 
     # Margin of victory (raw points). HCA and the margin transform are
     # applied inside the solver, not here, so downstream consumers see
