@@ -254,7 +254,7 @@
 <header>
   <h1>DUNCAN ♂️🏀</h1>
   <p class="subtitle">NBA Power Rankings</p>
-  <p class="model-note">Considers strength of opponent, margin of result, and recency. ~1.0 = contender; ~2.0+ = elite; ~2.5+ = generational (1996 Bulls = 2.94).</p>
+  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate point-spread vs avg team. ~3 = contender; ~6+ = elite; ~10+ = generational (1996 Bulls = 13.07).</p>
   <p class="updated" id="last-updated">Loading...</p>
   <p class="updated" id="last-refreshed" style="font-size:11px;color:#999;margin-top:-4px"></p>
 </header>
@@ -412,7 +412,7 @@ function resultClass(match, isStale) {
   return '';
 }
 
-const BAR_MIN = -3, BAR_MAX = 3, BAR_RANGE = 6;
+const BAR_MIN = -15, BAR_MAX = 15, BAR_RANGE = 30;
 
 function ratingBar(rating) {
   const clipped = Math.max(BAR_MIN, Math.min(BAR_MAX, rating));
@@ -670,7 +670,7 @@ function drawChart(rows, seasonFilter) {
   const H = 180;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
 
-  const CHART_MIN = -3, CHART_MAX = 3;
+  const CHART_MIN = -15, CHART_MAX = 15;
   const CTOP = 10, CBOT = 152;
 
   const px = (i) => (i / (rows.length - 1)) * (W - 20) + 10;
