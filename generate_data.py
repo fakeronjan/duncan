@@ -76,6 +76,63 @@ def conference(team):
     return TEAM_CONFERENCE.get(team, 'Other')
 
 
+# ── Era-aware display names ─────────────────────────────────────────────────
+# duncan.py uses canonical (current) franchise names internally so a team's
+# rating is continuous across same-market rebrands. Historical UI views
+# (GOAT, Champions, Standings, per-team Season cells) should show what the
+# team was actually called at the time. Maps canonical → list of
+# (start_season, end_season_inclusive, display_name) ranges. 9999 = ongoing.
+# Seasons follow basketball-reference convention: season N = N-1 to N (i.e.
+# season 2014 = the 2013-14 NBA season).
+NBA_TEAM_DISPLAY_HISTORY = {
+    'Washington Wizards':    [(1980, 1997, 'Washington Bullets'),
+                              (1998, 9999, 'Washington Wizards')],
+    'Charlotte Hornets':     [(1989, 2002, 'Charlotte Hornets'),
+                              (2005, 2014, 'Charlotte Bobcats'),
+                              (2015, 9999, 'Charlotte Hornets')],
+    'New Orleans Pelicans':  [(2003, 2005, 'New Orleans Hornets'),
+                              (2006, 2007, 'NO/OKC Hornets'),
+                              (2008, 2013, 'New Orleans Hornets'),
+                              (2014, 9999, 'New Orleans Pelicans')],
+}
+
+
+def display_name(canonical, season):
+    """Era-appropriate display name for the given canonical team and season."""
+    history = NBA_TEAM_DISPLAY_HISTORY.get(canonical)
+    if not history:
+        return canonical
+    s = int(season)
+    for start, end, name in history:
+        if start <= s <= end:
+            return name
+    return canonical
+
+
+def current_display_name(canonical):
+    """The team's most recent display name (used for dropdowns / current snapshot)."""
+    history = NBA_TEAM_DISPLAY_HISTORY.get(canonical)
+    if not history:
+        return canonical
+    return history[-1][2]
+
+
+def historical_display_names(canonical):
+    """Prior display names (most recent first), excluding the current name.
+    Used to render '(formerly X / Y)' hints in the Team Summary dropdown."""
+    history = NBA_TEAM_DISPLAY_HISTORY.get(canonical)
+    if not history:
+        return []
+    current = history[-1][2]
+    seen = {current}
+    out = []
+    for _, _, name in reversed(history[:-1]):
+        if name not in seen:
+            out.append(name)
+            seen.add(name)
+    return out
+
+
 def clean(val):
     if pd.isna(val):
         return ''
@@ -187,6 +244,7 @@ standings_data = {
         {
             'rank':            int(r['rank']),
             'team':            r['name'],
+            'display_name':    display_name(r['name'], r['season']),
             'conference':      conference(r['name']),
             'rating':          round(float(r['rating']), 3),
             'record':          clean(r['record']),
@@ -215,6 +273,7 @@ for i, (_, r) in enumerate(eos_top.iterrows()):
     goat_data.append({
         'rank':           i + 1,
         'team':           r['name'],
+        'display_name':   display_name(r['name'], r['season']),
         'conference':     conference(r['name']),
         'season':         int(r['season']),
         'rating':         round(float(r['rating']), 3),
@@ -241,7 +300,13 @@ for team in all_teams:
         continue
 
     team_slug = slug(team)
-    teams_index.append({'name': team, 'conference': conference(team), 'slug': team_slug})
+    teams_index.append({
+        'name': team,
+        'display_name': current_display_name(team),
+        'historical_names': historical_display_names(team),
+        'conference': conference(team),
+        'slug': team_slug,
+    })
 
     seasons = {}
     for season, sdf in tdf.groupby('season'):
@@ -258,6 +323,7 @@ for team in all_teams:
                 po  = ''
             entries.append({
                 'date':              str(r['date']),
+                'display_name':      display_name(team, season),
                 'rating':            round(float(r['rating']), 3),
                 'rank':              int(r['rank']),
                 'record':            clean(r['record']),
@@ -313,6 +379,7 @@ for season in all_seasons:
             teams_snap.append({
                 'rank':            int(r['rank']),
                 'team':            r['name'],
+                'display_name':    display_name(r['name'], season),
                 'conference':      conference(r['name']),
                 'rating':          round(float(r['rating']), 3),
                 'record':          clean(r['record']),
@@ -391,6 +458,7 @@ for season in sorted(df['season'].unique(), reverse=True):
         'series_score': series_score,
         'champion': {
             'team':           cr['name'],
+            'display_name':   display_name(cr['name'], season),
             'conference':     conference(cr['name']),
             'rating':         round(float(cr['rating']), 3),
             'rank':           int(cr['rank']),
@@ -401,6 +469,7 @@ for season in sorted(df['season'].unique(), reverse=True):
         },
         'runner_up': {
             'team':           rr['name'],
+            'display_name':   display_name(rr['name'], season),
             'conference':     conference(rr['name']),
             'rating':         round(float(rr['rating']), 3),
             'rank':           int(rr['rank']),
@@ -423,7 +492,7 @@ PRE_1980_CHAMPIONSHIPS = {
     'Milwaukee Bucks':         1,  # 1971
     'Golden State Warriors':   1,  # 1975
     'Portland Trail Blazers':  1,  # 1977
-    'Washington Bullets':      1,  # 1978
+    'Washington Wizards':      1,  # 1978 (as Bullets)
     'Seattle SuperSonics':     1,  # 1979
 }
 
@@ -432,7 +501,7 @@ PRE_1980_RUNNER_UPS = {
     'Boston Celtics':          1,  # 1958
     'Los Angeles Lakers':      8,  # 1962, 1963, 1965, 1966, 1968, 1969, 1970, 1973
     'Milwaukee Bucks':         1,  # 1974
-    'Washington Bullets':      2,  # 1975, 1979
+    'Washington Wizards':      2,  # 1975, 1979 (as Bullets)
     'Phoenix Suns':            1,  # 1976
     'Philadelphia 76ers':      1,  # 1977
     'Seattle SuperSonics':     1,  # 1978
