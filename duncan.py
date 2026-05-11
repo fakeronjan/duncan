@@ -6,31 +6,28 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import numpy as np
-# rankit==0.2 uses deprecated numpy aliases (np.int, np.float, np.bool) removed in numpy 1.24+.
-# Restore them before rankit import so the Massey solver works.
-if not hasattr(np, 'int'):   np.int = int
-if not hasattr(np, 'float'): np.float = float
-if not hasattr(np, 'bool'):  np.bool = bool
 from datetime import datetime, date
-import warnings
-import rankit  # pip install rankit
-from rankit.Table import Table
-from rankit.Ranker import MasseyRanker
-
-# Suppress SettingWithCopyWarning from rankit library internals.
-# pandas 3.x removed this class, so guard the lookup.
-try:
-    warnings.filterwarnings('ignore', category=pd.errors.SettingWithCopyWarning)
-except AttributeError:
-    pass
 
 # =========================================================
 # CONFIGURATION
 # =========================================================
 
-MIN_SEASON = 1980           # DO NOT CHANGE — affects all historical data
-ROLLING_WINDOW = 100        # number of game-days used in Massey rating window
-HOME_COURT_ADJUSTMENT = 0.25  # added to visitor margin, subtracted from home margin
+MIN_SEASON = 1980             # DO NOT CHANGE — affects all historical data
+
+# Season-aware rolling window: window (game-days) = WINDOW_MULTIPLIER * games-per-team-per-season.
+# At 1.5, an 82-game NBA season gets a 123-day window (was fixed 100 pre-port).
+# Lockout/COVID seasons get proportionally smaller windows automatically.
+WINDOW_MULTIPLIER = 1.5
+
+HOME_COURT_ADJUSTMENT = 2.0   # raw-point home advantage, subtracted from home margin pre-transform
+
+# Margin transform: cap at p~92 of NBA margins. Linear (raw-points-as-rating)
+# for the bulk of games; clipped above to keep blowouts from dominating.
+MARGIN_TRANSFORM = "cap"
+MARGIN_CAP = 25
+
+# WLS: weights affect observation influence, not margin magnitude.
+WEIGHTING_MODE = "wls"
 
 # Re-process the most recent N ranking_ids (game-days) on every run so late-
 # arriving NBA data is absorbed. Without this a mid-day cron caches that
@@ -38,14 +35,17 @@ HOME_COURT_ADJUSTMENT = 0.25  # added to visitor margin, subtracted from home ma
 # day finish hours later.
 RECOMPUTE_TAIL_DAYS = 7
 
-# Regular season game count threshold (Option B proxy for playoff start).
-# NBA regular season is 82 games per team. Lockout/COVID exceptions:
-#   1999: ~50 games, 2012: ~66 games, 2020: ~65-72 games (bubble)
-REGULAR_SEASON_GAMES = 82
-SHORTENED_SEASON_OVERRIDES = {
-    1999: 50,
-    2012: 66,
-    2020: 72,
+# Regular season game count per season (drives both window sizing and playoff-start
+# threshold). NBA is normally 82 games; lockouts/COVID exceptions noted inline.
+REGULAR_SEASON_GAMES = {
+    **{y: 82 for y in range(1980, 1999)},
+    1999: 50,  # lockout
+    **{y: 82 for y in range(2000, 2012)},
+    2012: 66,  # lockout
+    **{y: 82 for y in range(2013, 2020)},
+    2020: 72,  # COVID
+    2021: 72,  # post-COVID
+    **{y: 82 for y in range(2022, 2030)},
 }
 
 # Emirates NBA Cup championship games. The NBA does NOT count this game in
@@ -132,25 +132,15 @@ def prepare_game_data(raw_df):
     df['visitor_pts'] = pd.to_numeric(df['visitor_pts'])
     df['home_pts'] = pd.to_numeric(df['home_pts'])
 
-    # Margin of victory
+    # Margin of victory (raw points). HCA and the margin transform are
+    # applied inside the solver, not here, so downstream consumers see
+    # the unmodified game record.
     df['visitor_margin'] = df['visitor_pts'] - df['home_pts']
     df['home_margin'] = -df['visitor_margin']
 
     # Win flags
     df['visitor_win'] = np.where(df['visitor_margin'] > 0, 1, 0)
     df['home_win'] = 1 - df['visitor_win']
-
-    # Square-root margin (preserves direction)
-    df['visitor_sqrt_margin'] = np.where(
-        df['visitor_margin'] > 0,
-        df['visitor_margin'] ** 0.5,
-        -(df['home_margin'] ** 0.5)
-    )
-    df['home_sqrt_margin'] = -df['visitor_sqrt_margin']
-
-    # Home court adjustment
-    df['visitor_adjusted_margin'] = df['visitor_sqrt_margin'] + HOME_COURT_ADJUSTMENT
-    df['home_adjusted_margin'] = -df['visitor_adjusted_margin']
 
     # Drop incomplete rows before date parsing
     df = df.dropna()
@@ -187,17 +177,102 @@ def prepare_game_data(raw_df):
 
 
 # =========================================================
-# MASSEY RATINGS
+# MASSEY RATINGS — homebrew weighted least squares solver
 # =========================================================
+
+def _apply_margin_transform(margin, transform, cap):
+    """Sign-preserving transform applied to (raw_margin - hca)."""
+    m = np.asarray(margin, dtype=float)
+    if transform == "raw":
+        return m
+    if transform == "sqrt":
+        return np.sign(m) * np.sqrt(np.abs(m))
+    if transform == "cap":
+        return np.clip(m, -cap, cap)
+    if transform == "log":
+        return np.sign(m) * np.log1p(np.abs(m))
+    if transform == "tanh":
+        return cap * np.tanh(m / cap)
+    raise ValueError(f"Unknown MARGIN_TRANSFORM: {transform}")
+
+
+def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
+    """
+    Solve for team Massey ratings on a single rolling window.
+
+    Builds X (n_games × n_teams) with +1 for home, -1 for visitor, y from
+    the transformed HCA-adjusted home margin, and W from the recency
+    weights. Solves min sum_i w_i * (X_i r - y_i)^2 with a zero-sum
+    constraint enforced as an extra high-weight row.
+
+    WLS via row-scaling: multiplying both X and y by sqrt(w_i) turns the
+    weighted problem into an ordinary lstsq.
+    """
+    teams = sorted(set(window_df["home_team_name"]) | set(window_df["visitor_team_name"]))
+    team_idx = {t: i for i, t in enumerate(teams)}
+    n_teams = len(teams)
+    n_games = len(window_df)
+
+    X = np.zeros((n_games + 1, n_teams))
+    y = np.zeros(n_games + 1)
+    w = np.zeros(n_games + 1)
+
+    home_pts = window_df["home_pts"].to_numpy(dtype=float)
+    visitor_pts = window_df["visitor_pts"].to_numpy(dtype=float)
+    weights = window_df["date_weight"].to_numpy(dtype=float)
+    home_names = window_df["home_team_name"].to_numpy()
+    visitor_names = window_df["visitor_team_name"].to_numpy()
+
+    raw_margin = home_pts - visitor_pts - hca
+    transformed = _apply_margin_transform(raw_margin, margin_transform, margin_cap)
+
+    for i in range(n_games):
+        X[i, team_idx[home_names[i]]] = 1.0
+        X[i, team_idx[visitor_names[i]]] = -1.0
+
+    if weighting_mode == "wls":
+        y[:n_games] = transformed
+        w[:n_games] = weights
+    elif weighting_mode == "margin_scale":
+        y[:n_games] = transformed * weights
+        w[:n_games] = 1.0
+    else:
+        raise ValueError(f"Unknown WEIGHTING_MODE: {weighting_mode}")
+
+    # Zero-sum constraint via high-weight extra row.
+    X[-1, :] = 1.0
+    y[-1] = 0.0
+    w[-1] = 1.0e8
+
+    sqrt_w = np.sqrt(w)
+    Xw = X * sqrt_w[:, None]
+    yw = y * sqrt_w
+    r, *_ = np.linalg.lstsq(Xw, yw, rcond=None)
+
+    out = pd.DataFrame({"name": teams, "rating": r})
+    out["rank"] = out["rating"].rank(ascending=False, method="min").astype(int)
+    return out
+
+
+def _window_for_season(season):
+    """Season-aware window size: WINDOW_MULTIPLIER × regular-season games per team."""
+    reg_games = REGULAR_SEASON_GAMES.get(int(season), 82)
+    return int(round(reg_games * WINDOW_MULTIPLIER))
+
+
+# Largest window across any season — used as the floor for the first usable ranking_id.
+_MAX_WINDOW = max(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
+
 
 def compute_ratings(master_df, existing_ratings_df):
     """
-    Compute daily Massey power ratings using a rolling ROLLING_WINDOW-day window.
-    Skips dates already present in existing_ratings_df. Re-processes the most
-    recent RECOMPUTE_TAIL_DAYS ranking_ids each run to absorb late-arriving data.
+    Compute daily Massey power ratings using a season-aware rolling window
+    (WINDOW_MULTIPLIER × games-per-team-this-season). Skips dates already
+    present in existing_ratings_df. Re-processes the most recent
+    RECOMPUTE_TAIL_DAYS ranking_ids each run to absorb late-arriving data.
     """
     max_date_id = max(master_df['grouped_date_id'])
-    min_date_id = ROLLING_WINDOW
+    min_date_id = _MAX_WINDOW
     all_ids = sorted(existing_ratings_df['ranking_id'].unique())
     if len(all_ids) > RECOMPUTE_TAIL_DAYS:
         tail_threshold = all_ids[-RECOMPUTE_TAIL_DAYS]
@@ -211,25 +286,42 @@ def compute_ratings(master_df, existing_ratings_df):
     print("Running DUNCAN ratings for new data...")
     new_frames = []
 
+    # Determine each ranking_id's season once up front so window sizing is fast.
+    rid_to_season = (
+        master_df.sort_values('grouped_date_id')
+                 .drop_duplicates('grouped_date_id', keep='last')
+                 .set_index('grouped_date_id')['season']
+                 .to_dict()
+    )
+
     for i in range(min_date_id, max_date_id + 1):
         if min_ranked <= i <= max_ranked:
             continue
 
+        season_for_window = rid_to_season.get(i)
+        if season_for_window is None:
+            prior_ids = [k for k in rid_to_season if k < i]
+            season_for_window = rid_to_season[max(prior_ids)] if prior_ids else MIN_SEASON
+        window_size = _window_for_season(season_for_window)
+
         window = master_df[
-            (master_df['grouped_date_id'] >= i - (ROLLING_WINDOW - 1)) &
+            (master_df['grouped_date_id'] >= i - (window_size - 1)) &
             (master_df['grouped_date_id'] <= i)
         ].copy()
 
-        window['date_weight'] = (window['grouped_date_id'] - i + ROLLING_WINDOW) / ROLLING_WINDOW
-        window['visitor_weighted_margin'] = window['visitor_adjusted_margin'] * window['date_weight']
-        window['home_weighted_margin'] = -window['visitor_weighted_margin']
+        window['date_weight'] = (window['grouped_date_id'] - i + window_size) / window_size
 
         current_date = window['date_game'].max()
         season = window['season'].max()
         print(current_date)
 
-        nba_table = Table(window, ['visitor_team_name', 'home_team_name', 'visitor_weighted_margin', 'home_weighted_margin'])
-        ranked = MasseyRanker(nba_table).rank()
+        ranked = _solve_massey(
+            window,
+            hca=HOME_COURT_ADJUSTMENT,
+            weighting_mode=WEIGHTING_MODE,
+            margin_transform=MARGIN_TRANSFORM,
+            margin_cap=MARGIN_CAP,
+        )
         ranked['ranking_date'] = current_date
         ranked['ranking_id'] = i
         ranked['season'] = season
@@ -272,7 +364,7 @@ def compute_standings(master_df, existing_standings_df):
     else:
         game_df = master_df[cols_needed]
     max_date_id = max(master_df['grouped_date_id'])
-    min_date_id = ROLLING_WINDOW
+    min_date_id = _MAX_WINDOW
     if len(existing_standings_df) > 0 and 'ranking_id' in existing_standings_df.columns:
         all_ids = sorted(existing_standings_df['ranking_id'].unique())
         if len(all_ids) > RECOMPUTE_TAIL_DAYS:
@@ -343,7 +435,7 @@ def _get_regular_season_end_date(master_df, season):
     under the expected regular season game count.
     Falls back to SHORTENED_SEASON_OVERRIDES for lockout/COVID years.
     """
-    threshold = SHORTENED_SEASON_OVERRIDES.get(season, REGULAR_SEASON_GAMES)
+    threshold = REGULAR_SEASON_GAMES.get(int(season), 82)
     season_games = master_df[master_df['season'] == season].copy()
 
     # Build cumulative game count per team per date
@@ -396,7 +488,7 @@ def assemble_final(master_df, ratings_df, standings_df):
         home = sg[['home_team_name']].rename(columns={'home_team_name': 'team'})
         away = sg[['visitor_team_name']].rename(columns={'visitor_team_name': 'team'})
         all_g = pd.concat([home, away])
-        threshold = SHORTENED_SEASON_OVERRIDES.get(season, REGULAR_SEASON_GAMES)
+        threshold = REGULAR_SEASON_GAMES.get(int(season), 82)
         if all_g.groupby('team').size().max() >= threshold:
             regular_season_complete.add(season)
 

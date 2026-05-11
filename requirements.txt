@@ -1,6 +1,5 @@
 pandas
-numpy<2
+numpy
 requests
 beautifulsoup4
 lxml
-rankit==0.2
