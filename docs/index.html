@@ -149,6 +149,11 @@
   }
   .team-cell { font-weight: 600; }
 
+  /* Clickable cells — deep-link to Team Summary / Standings */
+  .linked { cursor: pointer; }
+  .linked:hover { text-decoration: underline; }
+  .team-cell.linked, .team-link.linked { color: #1a6b8a; }
+
   .rating-cell {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
@@ -320,6 +325,7 @@ let currentSnapshot   = null;
 let goatData          = null;
 let teamsIndex        = null;
 let teamCache         = {};
+let nameToSlug        = {};  // canonical + historical name → slug, built from teamsIndex
 
 // ── Conference filter pillbox (shared across Standings / TS / GOAT) ─────────
 const CONFERENCES = ['East', 'West'];
@@ -410,6 +416,70 @@ function resultClass(match, isStale) {
   if (first === 'W') return 'result-W' + suffix;
   if (first === 'L') return 'result-L' + suffix;
   return '';
+}
+
+// Parse "L vs. Orlando Magic 90-99" or "W @ Boston Celtics 84-96" → wrap
+// opponent name in a linked span. Opponent name may be a historical name
+// (e.g. "Charlotte Bobcats") — nameToSlug includes those aliases.
+function renderLastMatch(raw, season, isStale) {
+  const display = displayMatch(raw);
+  if (!display) return '-';
+  const rc = resultClass(raw, isStale);
+  const m = display.match(/^([WL])\s+(vs\.?|@)\s+(.+?)\s+(\d+\s*-\s*\d+.*)$/);
+  if (!m) return `<span class="${rc}">${display}</span>`;
+  const [, letter, venue, opponent, score] = m;
+  const slug = nameToSlug[opponent.trim()];
+  const oppHtml = slug
+    ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
+    : opponent;
+  return `<span class="${rc}">${letter} ${venue} ${oppHtml} ${score}</span>`;
+}
+
+// ── Deep-link handlers ──────────────────────────────────────────────────────
+async function teamLinkClick(slug, season) {
+  if (!slug) return;
+  if (!teamsIndex) await loadTeamsIndex();
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('nav button[data-tab="team-summary"]').classList.add('active');
+  document.getElementById('team-summary').classList.add('active');
+  tsConf = 'all';
+  buildConfPills('ts-conf-pills', tsConf, v => { tsConf = v; populateTeamSelect(); });
+  populateTeamSelect();
+  document.getElementById('team-select').value = slug;
+  await loadTeam(slug);
+  if (season != null && season !== '') {
+    const seasonSel = document.getElementById('season-select');
+    if ([...seasonSel.options].some(o => o.value === String(season))) {
+      seasonSel.value = String(season);
+    }
+  }
+  renderTeamTable();
+}
+
+function seasonLinkClick(season) {
+  if (!season) return;
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('nav button[data-tab="standings"]').classList.add('active');
+  document.getElementById('standings').classList.add('active');
+  document.getElementById('season-filter').value = season;
+  loadSeason(season);
+}
+
+function attachLinks() {
+  document.querySelectorAll('.team-cell.linked, .team-link.linked').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      teamLinkClick(el.dataset.teamSlug, el.dataset.season);
+    });
+  });
+  document.querySelectorAll('[data-season-link].linked').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      seasonLinkClick(el.dataset.seasonLink);
+    });
+  });
 }
 
 const BAR_MIN = -15, BAR_MAX = 15, BAR_RANGE = 30;
@@ -525,17 +595,21 @@ function renderStandings() {
 
   // Preserve the all-time/league-wide rank when filtered (gaps are informative —
   // they show where filtered-out teams sit). Same pattern as GOAT and DILLON.
+  const season = currentSeasonData && currentSeasonData.season;
   const rows = teams.map(t => {
     const isStale = !!(prevDate && t.last_match_date && t.last_match_date <= prevDate);
+    const slug = nameToSlug[t.team];  // t.team is the canonical name
+    const label = t.display_name || t.team;
+    const teamTd = slug
+      ? `<td class="team-cell linked" data-team-slug="${slug}" data-season="${season}">${label}</td>`
+      : `<td class="team-cell">${label}</td>`;
     return `<tr>
       <td class="rank-cell">${t.rank}</td>
-      <td class="team-cell">${t.display_name || t.team}</td>
+      ${teamTd}
       <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record, t.record)}</td>
       <td>${ratingBar(t.rating)}</td>
-      <td class="last-match-cell">
-        <span class="${resultClass(t.last_match, isStale)}">${displayMatch(t.last_match) || '-'}</span>
-      </td>
+      <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
       <td class="col-hide-mobile" style="text-align:center">${finishBadge(t.finals_status, t.cup_status)}</td>
     </tr>`;
@@ -556,6 +630,7 @@ function renderStandings() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+  attachLinks();
 }
 
 document.getElementById('season-filter').addEventListener('change', e => loadSeason(e.target.value));
@@ -586,6 +661,11 @@ async function loadTeamsIndex() {
   try {
     const res = await fetch(`${BASE}/teams_index.json`);
     teamsIndex = await res.json();
+    nameToSlug = {};
+    teamsIndex.forEach(t => {
+      nameToSlug[t.name] = t.slug;
+      (t.historical_names || []).forEach(h => { nameToSlug[h] = t.slug; });
+    });
     populateTeamSelect();
   } catch(e) {
     document.getElementById('team-select').innerHTML =
@@ -651,10 +731,8 @@ function renderTeamTable() {
       : fmtSeason(g.season);
     return `<tr>
     <td style="white-space:nowrap;color:#888;font-size:12px">${g.date}</td>
-    <td style="font-size:11px;color:#555">${seasonCell}</td>
-    <td class="last-match-cell">
-      <span class="${resultClass(g.last_match)}">${displayMatch(g.last_match) || '-'}</span>
-    </td>
+    <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555">${seasonCell}</td>
+    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, false)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record, g.record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating)}</td>
@@ -673,6 +751,7 @@ function renderTeamTable() {
       </tr></thead>
       <tbody>${tableRows}</tbody>
     </table>`;
+  attachLinks();
 }
 
 function drawChart(rows, seasonFilter) {
@@ -759,7 +838,7 @@ function renderChampions() {
     return;
   }
 
-  function teamCell(t, bg) {
+  function teamCell(t, bg, season) {
     if (!t) return `<td class="${bg}" colspan="3">—</td>`;
     const rating = t.rating != null ? t.rating.toFixed(2) : '—';
     const rank   = t.rank   != null ? `${t.rank}` : '—';
@@ -773,20 +852,25 @@ function renderChampions() {
       : t.cup_status === 1
       ? ` <span class="finish-badge finish-runner" title="NBA Cup Runner-Up">Cup 🥈</span>`
       : '';
+    const label = t.display_name || t.team;
+    const slug = nameToSlug[t.team] || nameToSlug[label];
+    const teamTd = slug
+      ? `<td class="${bg} team-cell linked" data-team-slug="${slug}" data-season="${season}" style="white-space:nowrap">${label}${countStr}${cupBadge}</td>`
+      : `<td class="${bg} team-cell" style="white-space:nowrap">${label}${countStr}${cupBadge}</td>`;
     return `
-      <td class="${bg} team-cell" style="white-space:nowrap">${t.display_name || t.team}${countStr}${cupBadge}</td>
+      ${teamTd}
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
       <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>`;
   }
 
   const rows = entries.map(e => `<tr>
-    <td class="season-cell">${fmtSeason(e.season)}</td>
-    ${teamCell(e.champion,  'col-champ')}
+    <td class="season-cell linked" data-season-link="${e.season}">${fmtSeason(e.season)}</td>
+    ${teamCell(e.champion,  'col-champ', e.season)}
     <td class="divider-col" style="text-align:center;font-size:11px;font-weight:600;white-space:nowrap;width:64px;padding:2px 4px;line-height:1.3">
       ${e.final_score || ''}${e.series_score ? `<div style="font-size:10px;color:#888;font-weight:400">(${e.series_score})</div>` : ''}
     </td>
-    ${teamCell(e.runner_up, 'col-ru')}
+    ${teamCell(e.runner_up, 'col-ru', e.season)}
   </tr>`).join('');
 
   document.getElementById('history-table-wrap').innerHTML = `
@@ -805,6 +889,7 @@ function renderChampions() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+  attachLinks();
 }
 
 // ── GOAT Table ────────────────────────────────────────────────────────────────
@@ -824,15 +909,22 @@ function renderGoat() {
   const teams = goatConf === 'all'
     ? goatData
     : goatData.filter(t => t.conference === goatConf);
-  const rows = teams.map(t => `<tr>
+  const rows = teams.map(t => {
+    const label = t.display_name || t.team;
+    const slug = nameToSlug[t.team] || nameToSlug[label];
+    const teamTd = slug
+      ? `<td class="team-cell linked" data-team-slug="${slug}" data-season="${t.season}">${label}</td>`
+      : `<td class="team-cell">${label}</td>`;
+    return `<tr>
     <td class="rank-cell">${t.rank}</td>
-    <td style="text-align:center">${fmtSeason(t.season)}</td>
-    <td class="team-cell">${t.display_name || t.team}</td>
+    <td class="season-cell linked" data-season-link="${t.season}" style="text-align:center">${fmtSeason(t.season)}</td>
+    ${teamTd}
     <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
     <td>${ratingBar(t.rating)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap" class="col-hide-mobile">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(t.finals_status, t.cup_status)}</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 
   document.getElementById('goat-table-wrap').innerHTML = `
     <table>
@@ -847,16 +939,21 @@ function renderGoat() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+  attachLinks();
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 buildConfPills('standings-conf-pills', standingsConf, v => { standingsConf = v; renderStandings(); });
 buildConfPills('ts-conf-pills',        tsConf,        v => { tsConf = v; populateTeamSelect(); });
 buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; renderGoat(); });
-initStandings();
-loadTeamsIndex();
-loadChampions();
-loadGoat();
+// Load teams_index first so opponent/slug lookups are populated before any
+// table renders — avoids a double-render flash on initial page load.
+(async () => {
+  await loadTeamsIndex();
+  initStandings();
+  loadChampions();
+  loadGoat();
+})();
 </script>
 </body>
 </html>
