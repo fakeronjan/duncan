@@ -139,6 +139,23 @@ def clean(val):
     return str(val)
 
 
+# duncan.py constructs last_match strings using the canonical franchise name
+# (e.g. "W vs. Charlotte Hornets 117-116" for a 2004-05 game when Charlotte
+# was actually called the Bobcats). Rewrite the opponent portion with the
+# era-appropriate display name so historical Team Summary / Standings views
+# show the franchise's contemporary name.
+_LAST_MATCH_RE = re.compile(r'^([WL])\s+(vs\.?|@)\s+(.+?)\s+(\d+\s*-\s*\d+.*)$')
+
+def era_aware_last_match(raw, season):
+    if not raw:
+        return raw
+    m = _LAST_MATCH_RE.match(str(raw))
+    if not m:
+        return raw
+    letter, venue, opponent, score = m.groups()
+    return f"{letter} {venue} {display_name(opponent.strip(), season)} {score}"
+
+
 def slug(name):
     return re.sub(r'[^\w]', '_', name).strip('_')
 
@@ -248,7 +265,7 @@ standings_data = {
             'conference':      conference(r['name']),
             'rating':          round(float(r['rating']), 3),
             'record':          clean(r['record']),
-            'last_match':      clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(r['name'], str(r['date']), r['season']),
+            'last_match':      era_aware_last_match(clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(r['name'], str(r['date']), r['season']), r['season']),
             'finals_status':   int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
             'cup_status':      int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
         }
@@ -329,7 +346,7 @@ for team in all_teams:
                 'record':            clean(r['record']),
                 'regular_record':    reg,
                 'playoff_record':    po,
-                'last_match':        clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(team, str(r['date']), season),
+                'last_match':        era_aware_last_match(clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(team, str(r['date']), season), season),
                 'is_end_of_season':  int(r['is_end_of_season']),
                 'season_flag':       int(r['season_flag']),
                 'is_playoff':        int(is_playoff(season, r['date'])),
@@ -385,7 +402,7 @@ for season in all_seasons:
                 'record':          clean(r['record']),
                 'regular_record':  reg,
                 'playoff_record':  po,
-                'last_match':      clean(r['last_game_result']) if played_today else last_game_as_of(r['name'], snap_date, season),
+                'last_match':      era_aware_last_match(clean(r['last_game_result']) if played_today else last_game_as_of(r['name'], snap_date, season), season),
                 'last_match_date': snap_date if played_today else last_game_date_as_of(r['name'], snap_date, season),
                 'finals_status':   int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
             'cup_status':      int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
