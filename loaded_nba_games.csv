@@ -68110,6 +68110,9 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Wed, Jan 21, 2026",7:30p,Brooklyn Nets,,New York Knicks,,,,,,2026,Madison Square Garden (IV),
 "Wed, Oct 29, 2025",6:30p,Houston Rockets,,Toronto Raptors,,,,,,2026,Scotiabank Arena,
 "Tue, Dec 23, 2025",7:30p,New Orleans Pelicans,,Cleveland Cavaliers,,,,,,2026,Rocket Arena,
+"Mon, May 11, 2026",8:00p,Detroit Pistons,103.0,Cleveland Cavaliers,112.0,Box Score,,"19,432",,2026,Rocket Arena,2:28
+"Mon, May 11, 2026",10:30p,Oklahoma City Thunder,115.0,Los Angeles Lakers,110.0,Box Score,,"19,057",,2026,Crypto.com Arena,2:35
+"Wed, May 13, 2026",8:00p,Cleveland Cavaliers,,Detroit Pistons,,,,,,2026,Little Caesars Arena,
 "Tue, Oct 21, 2025",7:30p,Houston Rockets,124,Oklahoma City Thunder,125,Box Score,2OT,"18,203",,2026,Paycom Center,3:15
 "Tue, Oct 21, 2025",10:00p,Golden State Warriors,119,Los Angeles Lakers,109,Box Score,,"18,997",,2026,Crypto.com Arena,2:26
 "Wed, Oct 22, 2025",7:00p,Brooklyn Nets,117,Charlotte Hornets,136,Box Score,,"19,516",,2026,Spectrum Center,2:28
@@ -69411,9 +69414,9 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Sun, May 10, 2026",7:30p,San Antonio Spurs,109,Minnesota Timberwolves,114,Box Score,,"18,978",,2026,Target Center,2:37
 "Mon, May 11, 2026",8:00p,Detroit Pistons,103,Cleveland Cavaliers,112,Box Score,,"19,432",,2026,Rocket Arena,2:28
 "Mon, May 11, 2026",10:30p,Oklahoma City Thunder,115,Los Angeles Lakers,110,Box Score,,"19,057",,2026,Crypto.com Arena,2:35
-"Tue, May 12, 2026",8:00p,Minnesota Timberwolves,,San Antonio Spurs,,,,,,2026,Frost Bank Center,
+"Tue, May 12, 2026",8:00p,Minnesota Timberwolves,97,San Antonio Spurs,126,Box Score,,"19,345",,2026,Frost Bank Center,2:28
 "Wed, May 13, 2026",8:00p,Cleveland Cavaliers,,Detroit Pistons,,,,,,2026,Little Caesars Arena,
-"Fri, May 15, 2026",,Detroit Pistons,,Cleveland Cavaliers,,,,,,2026,Rocket Arena,
-"Fri, May 15, 2026",,San Antonio Spurs,,Minnesota Timberwolves,,,,,,2026,Target Center,
+"Fri, May 15, 2026",7:00p,Detroit Pistons,,Cleveland Cavaliers,,,,,,2026,Rocket Arena,
+"Fri, May 15, 2026",9:30p,San Antonio Spurs,,Minnesota Timberwolves,,,,,,2026,Target Center,
 "Sun, May 17, 2026",,Cleveland Cavaliers,,Detroit Pistons,,,,,,2026,Little Caesars Arena,
 "Sun, May 17, 2026",,Minnesota Timberwolves,,San Antonio Spurs,,,,,,2026,Frost Bank Center,
