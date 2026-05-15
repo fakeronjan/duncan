@@ -288,8 +288,12 @@ def _window_for_season(season):
     return int(round(reg_games * WINDOW_MULTIPLIER))
 
 
-# Largest window across any season — used as the floor for the first usable ranking_id.
-_MAX_WINDOW = max(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
+# Smallest window across any season — floor for the loop's starting ranking_id.
+# Using the max here would silently drop any season whose total game-days are
+# shorter than the modern window (would bite the 1999 / 2012 lockouts if
+# WINDOW_MULTIPLIER ever moved up). Each ranking_id is then gated by its OWN
+# season's window_size inside the loop.
+_MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
 
 
 def compute_ratings(master_df, existing_ratings_df):
@@ -300,7 +304,7 @@ def compute_ratings(master_df, existing_ratings_df):
     RECOMPUTE_TAIL_DAYS ranking_ids each run to absorb late-arriving data.
     """
     max_date_id = max(master_df['grouped_date_id'])
-    min_date_id = _MAX_WINDOW
+    min_date_id = _MIN_WINDOW
     all_ids = sorted(existing_ratings_df['ranking_id'].unique())
     if len(all_ids) > RECOMPUTE_TAIL_DAYS:
         tail_threshold = all_ids[-RECOMPUTE_TAIL_DAYS]
@@ -331,6 +335,12 @@ def compute_ratings(master_df, existing_ratings_df):
             prior_ids = [k for k in rid_to_season if k < i]
             season_for_window = rid_to_season[max(prior_ids)] if prior_ids else MIN_SEASON
         window_size = _window_for_season(season_for_window)
+
+        # Don't publish until this season's window can be filled. Each season's
+        # window is sized to its game count, so the earliest publishable game-day
+        # is the one where the lookback reaches a full window of games.
+        if i < window_size:
+            continue
 
         window = master_df[
             (master_df['grouped_date_id'] >= i - (window_size - 1)) &
@@ -392,7 +402,8 @@ def compute_standings(master_df, existing_standings_df):
     else:
         game_df = master_df[cols_needed]
     max_date_id = max(master_df['grouped_date_id'])
-    min_date_id = _MAX_WINDOW
+    # Standings are cumulative — no window to fill, so we start from the first game-day.
+    min_date_id = int(master_df['grouped_date_id'].min())
     if len(existing_standings_df) > 0 and 'ranking_id' in existing_standings_df.columns:
         all_ids = sorted(existing_standings_df['ranking_id'].unique())
         if len(all_ids) > RECOMPUTE_TAIL_DAYS:
