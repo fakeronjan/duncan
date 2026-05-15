@@ -288,7 +288,7 @@ def _window_for_season(season):
     return int(round(reg_games * WINDOW_MULTIPLIER))
 
 
-# Smallest window across any season — floor for the loop's starting ranking_id.
+# Smallest window across any season - floor for the loop's starting ranking_id.
 # Using the max here would silently drop any season whose total game-days are
 # shorter than the modern window (would bite the 1999 / 2012 lockouts if
 # WINDOW_MULTIPLIER ever moved up). Each ranking_id is then gated by its OWN
@@ -402,7 +402,7 @@ def compute_standings(master_df, existing_standings_df):
     else:
         game_df = master_df[cols_needed]
     max_date_id = max(master_df['grouped_date_id'])
-    # Standings are cumulative — no window to fill, so we start from the first game-day.
+    # Standings are cumulative - no window to fill, so we start from the first game-day.
     min_date_id = int(master_df['grouped_date_id'].min())
     if len(existing_standings_df) > 0 and 'ranking_id' in existing_standings_df.columns:
         all_ids = sorted(existing_standings_df['ranking_id'].unique())
