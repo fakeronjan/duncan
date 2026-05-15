@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DUNCAN — NBA Power Rankings</title>
+<title>DUNCAN - NBA Power Rankings</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -149,7 +149,7 @@
   }
   .team-cell { font-weight: 600; }
 
-  /* Clickable cells — deep-link to Team Summary / Standings */
+  /* Clickable cells - deep-link to Team Summary / Standings */
   .linked { cursor: pointer; }
   .linked:hover { text-decoration: underline; }
   .team-cell.linked, .team-link.linked { color: #1a6b8a; }
@@ -289,7 +289,7 @@
 <div id="team-summary" class="tab">
   <div class="conf-pills" id="ts-conf-pills"></div>
   <div class="controls">
-    <select id="team-select"><option value="">— Select a team —</option></select>
+    <select id="team-select"><option value="">- Select a team -</option></select>
     <select id="season-select"><option value="all">All seasons</option></select>
     <select id="date-type-select">
       <option value="all">All dates</option>
@@ -306,7 +306,7 @@
 <!-- ── CHAMPIONS (League History) ────────────────────────────────────────── -->
 <div id="league-history" class="tab">
   <p class="data-note">
-    Counts reflect titles won under the franchise's current city/name. Relocations are treated as separate franchises — e.g., Minneapolis Lakers' 5 titles (1949-1954) aren't included in the Los Angeles Lakers' count.
+    Counts reflect titles won under the franchise's current city/name. Relocations are treated as separate franchises - e.g., Minneapolis Lakers' 5 titles (1949-1954) aren't included in the Los Angeles Lakers' count.
   </p>
   <div id="history-table-wrap"><p class="loading">Loading champions...</p></div>
 </div>
@@ -360,7 +360,7 @@ function displayMatch(s) { return (!s || _PLACEHOLDER_LM.has(s)) ? '' : s; }
 
 function fmtRecord(rec) {
   // NBA records come in as "12-10" (W-L). Show win pct in dimmed parens.
-  if (!rec || rec === '—') return '0-0';
+  if (!rec || rec === '-') return '0-0';
   const m = rec.match(/^(\d+)\s*-\s*(\d+)$/);
   if (!m) return rec;
   const w = parseInt(m[1]);
@@ -373,7 +373,7 @@ function fmtRecord(rec) {
 function fmtRecordStacked(reg, playoff) {
   // Champions/GOAT: regular-season W-L with win pct on top.
   // For playoff teams, add playoff W-L on a new line (no parens).
-  if (!reg || reg === '—') return '0-0';
+  if (!reg || reg === '-') return '0-0';
   const top = fmtRecord(reg);
   const pm = playoff ? playoff.match(/^(\d+)-(\d+)$/) : null;
   const hasPlayoffs = pm && (parseInt(pm[1]) + parseInt(pm[2]) > 0);
@@ -420,7 +420,7 @@ function resultClass(match, isStale) {
 
 // Parse "L vs. Orlando Magic 90-99" or "W @ Boston Celtics 84-96" → wrap
 // opponent name in a linked span. Opponent name may be a historical name
-// (e.g. "Charlotte Bobcats") — nameToSlug includes those aliases.
+// (e.g. "Charlotte Bobcats") - nameToSlug includes those aliases.
 function renderLastMatch(raw, season, isStale) {
   const display = displayMatch(raw);
   if (!display) return '-';
@@ -593,7 +593,7 @@ function renderStandings() {
   const idx = snaps.findIndex(s => s.date === currentSnapshot.date);
   const prevDate = idx > 0 ? snaps[idx - 1].date : null;
 
-  // Preserve the all-time/league-wide rank when filtered (gaps are informative —
+  // Preserve the all-time/league-wide rank when filtered (gaps are informative -
   // they show where filtered-out teams sit). Same pattern as GOAT and DILLON.
   const season = currentSeasonData && currentSeasonData.season;
   const rows = teams.map(t => {
@@ -643,7 +643,7 @@ function populateTeamSelect() {
   const filtered = tsConf === 'all'
     ? teamsIndex
     : teamsIndex.filter(t => t.conference === tsConf);
-  sel.innerHTML = '<option value="">— Select a team —</option>';
+  sel.innerHTML = '<option value="">- Select a team -</option>';
   filtered.forEach(t => {
     const opt = document.createElement('option');
     opt.value = t.slug;
@@ -839,9 +839,9 @@ function renderChampions() {
   }
 
   function teamCell(t, bg, season) {
-    if (!t) return `<td class="${bg}" colspan="3">—</td>`;
-    const rating = t.rating != null ? t.rating.toFixed(2) : '—';
-    const rank   = t.rank   != null ? `${t.rank}` : '—';
+    if (!t) return `<td class="${bg}" colspan="3">-</td>`;
+    const rating = t.rating != null ? t.rating.toFixed(2) : '-';
+    const rank   = t.rank   != null ? `${t.rank}` : '-';
     const countStr = t.title_count
       ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${t.title_count} 👑)</span>`
       : t.runner_up_count
@@ -947,7 +947,7 @@ buildConfPills('standings-conf-pills', standingsConf, v => { standingsConf = v; 
 buildConfPills('ts-conf-pills',        tsConf,        v => { tsConf = v; populateTeamSelect(); });
 buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; renderGoat(); });
 // Load teams_index first so opponent/slug lookups are populated before any
-// table renders — avoids a double-render flash on initial page load.
+// table renders - avoids a double-render flash on initial page load.
 (async () => {
   await loadTeamsIndex();
   initStandings();
