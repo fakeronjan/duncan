@@ -68136,6 +68136,7 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Fri, May 29, 2026",,New York Knicks,,Cleveland Cavaliers,,,,,,2026,Rocket Arena,
 "Sun, May 31, 2026",,Cleveland Cavaliers,,New York Knicks,,,,,,2026,Madison Square Garden (IV),
 "Mon, May 18, 2026",8:30p,San Antonio Spurs,122.0,Oklahoma City Thunder,115.0,Box Score,2OT,"18,203",,2026,Paycom Center,3:05
+"Tue, May 19, 2026",8:00p,Cleveland Cavaliers,104.0,New York Knicks,115.0,Box Score,OT,"19,812",,2026,Madison Square Garden (IV),2:46
 "Tue, Oct 21, 2025",7:30p,Houston Rockets,124,Oklahoma City Thunder,125,Box Score,2OT,"18,203",,2026,Paycom Center,3:15
 "Tue, Oct 21, 2025",10:00p,Golden State Warriors,119,Los Angeles Lakers,109,Box Score,,"18,997",,2026,Crypto.com Arena,2:26
 "Wed, Oct 22, 2025",7:00p,Brooklyn Nets,117,Charlotte Hornets,136,Box Score,,"19,516",,2026,Spectrum Center,2:28
@@ -69444,13 +69445,13 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Sun, May 17, 2026",8:00p,Cleveland Cavaliers,125,Detroit Pistons,94,Box Score,,"20,062",,2026,Little Caesars Arena,2:33
 "Mon, May 18, 2026",8:30p,San Antonio Spurs,122,Oklahoma City Thunder,115,Box Score,2OT,"18,203",,2026,Paycom Center,3:05
 "Tue, May 19, 2026",8:00p,Cleveland Cavaliers,104,New York Knicks,115,Box Score,OT,"19,812",,2026,Madison Square Garden (IV),2:46
-"Wed, May 20, 2026",8:30p,San Antonio Spurs,,Oklahoma City Thunder,,,,,,2026,Paycom Center,
+"Wed, May 20, 2026",8:30p,San Antonio Spurs,113,Oklahoma City Thunder,122,Box Score,,"18,203",,2026,Paycom Center,2:28
 "Thu, May 21, 2026",8:00p,Cleveland Cavaliers,,New York Knicks,,,,,,2026,Madison Square Garden (IV),
 "Fri, May 22, 2026",8:30p,Oklahoma City Thunder,,San Antonio Spurs,,,,,,2026,Frost Bank Center,
 "Sat, May 23, 2026",8:00p,New York Knicks,,Cleveland Cavaliers,,,,,,2026,Rocket Arena,
 "Sun, May 24, 2026",8:00p,Oklahoma City Thunder,,San Antonio Spurs,,,,,,2026,Frost Bank Center,
 "Mon, May 25, 2026",8:00p,New York Knicks,,Cleveland Cavaliers,,,,,,2026,Rocket Arena,
-"Tue, May 26, 2026",,San Antonio Spurs,,Oklahoma City Thunder,,,,,,2026,Paycom Center,
+"Tue, May 26, 2026",8:30p,San Antonio Spurs,,Oklahoma City Thunder,,,,,,2026,Paycom Center,
 "Wed, May 27, 2026",,Cleveland Cavaliers,,New York Knicks,,,,,,2026,Madison Square Garden (IV),
 "Thu, May 28, 2026",,Oklahoma City Thunder,,San Antonio Spurs,,,,,,2026,Frost Bank Center,
 "Fri, May 29, 2026",,New York Knicks,,Cleveland Cavaliers,,,,,,2026,Rocket Arena,
