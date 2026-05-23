@@ -469,25 +469,44 @@ def compute_standings(master_df, existing_standings_df):
 
 def _get_regular_season_end_date(master_df, season):
     """
-    Estimate the last date of the regular season for a given season using
-    Option B: find the last date where every active team has played at or
-    under the expected regular season game count.
-    Falls back to SHORTENED_SEASON_OVERRIDES for lockout/COVID years.
+    Estimate the last date of the regular season for a given season.
+
+    Approach: for each team that reached the season's RS game threshold, find
+    the date of their threshold-th game. Most teams' threshold-th game lands on
+    the actual league-wide last RS day; outliers (teams that played < threshold
+    RS games due to cancellations) have their threshold-th game in playoffs.
+
+    Take the modal date and then return the max date within +/- 2 days of it.
+    This handles:
+      - 2013 Boston-Indiana (Boston Marathon cancellation): 2 teams' game 82
+        landed on R1G1, mode is the real RS-end date.
+      - 2020 bubble: 1 outlier whose game 72 was a playoff game; mode + window
+        correctly anchors to Aug 14.
+      - Normal seasons: window encompasses all real RS-end dates spread over
+        ~1-3 days near the cluster.
     """
     threshold = REGULAR_SEASON_GAMES.get(int(season), 82)
     season_games = master_df[master_df['season'] == season].copy()
 
-    # Build cumulative game count per team per date
     home = season_games[['date_game', 'home_team_name']].rename(columns={'home_team_name': 'team'})
     away = season_games[['date_game', 'visitor_team_name']].rename(columns={'visitor_team_name': 'team'})
     all_games = pd.concat([home, away]).sort_values('date_game')
     all_games['team_game_num'] = all_games.groupby('team').cumcount() + 1
 
-    # Last date where no team has exceeded the threshold
-    within_rs = all_games[all_games['team_game_num'] <= threshold]
-    if within_rs.empty:
+    totals = all_games.groupby('team')['team_game_num'].max()
+    reached = totals[totals >= threshold].index
+    if not len(reached):
         return None
-    return within_rs['date_game'].max()
+
+    thresh_dates = (
+        all_games[(all_games['team_game_num'] == threshold) & (all_games['team'].isin(reached))]
+        .groupby('team')['date_game']
+        .first()
+    )
+    mode_date = thresh_dates.mode().iloc[0]
+    delta = pd.Timedelta(days=2)
+    in_window = thresh_dates[(thresh_dates >= mode_date - delta) & (thresh_dates <= mode_date + delta)]
+    return in_window.max()
 
 
 def assemble_final(master_df, ratings_df, standings_df):
