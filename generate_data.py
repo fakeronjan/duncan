@@ -31,6 +31,7 @@ TEAM_CONFERENCE = {
     'Atlanta Hawks':        'East',
     'Boston Celtics':       'East',
     'Brooklyn Nets':        'East',
+    'Buffalo Braves':       'East',
     'Charlotte Bobcats':    'East',
     'Charlotte Hornets':    'East',
     'Chicago Bulls':        'East',
@@ -41,6 +42,7 @@ TEAM_CONFERENCE = {
     'Milwaukee Bucks':      'East',
     'New Jersey Nets':      'East',
     'New York Knicks':      'East',
+    'New York Nets':        'East',
     'Orlando Magic':        'East',
     'Philadelphia 76ers':   'East',
     'Toronto Raptors':      'East',
@@ -58,6 +60,7 @@ TEAM_CONFERENCE = {
     'Memphis Grizzlies':                 'West',
     'Minnesota Timberwolves':            'West',
     'New Orleans Hornets':               'West',
+    'New Orleans Jazz':                  'West',
     'New Orleans Pelicans':              'West',
     'New Orleans/Oklahoma City Hornets': 'West',
     'Oklahoma City Thunder':             'West',
@@ -85,7 +88,7 @@ def conference(team):
 # Seasons follow basketball-reference convention: season N = N-1 to N (i.e.
 # season 2014 = the 2013-14 NBA season).
 NBA_TEAM_DISPLAY_HISTORY = {
-    'Washington Wizards':    [(1980, 1997, 'Washington Bullets'),
+    'Washington Wizards':    [(1977, 1997, 'Washington Bullets'),
                               (1998, 9999, 'Washington Wizards')],
     'Charlotte Hornets':     [(1989, 2002, 'Charlotte Hornets'),
                               (2005, 2014, 'Charlotte Bobcats'),
@@ -497,36 +500,33 @@ for season in sorted(df['season'].unique(), reverse=True):
         },
     })
 
-# Pre-1980 NBA Finals counts (1947-1979), keyed by team name as it appears in our data.
+# Pre-1977 NBA Finals counts (1947-1976), keyed by team name as it appears in our data.
 # Franchises that no longer exist or relocated under different names (e.g. Minneapolis
 # Lakers, Syracuse Nationals, St. Louis Hawks, Fort Wayne Pistons) are NOT carried over —
 # matches the city-name-separate philosophy used elsewhere in the site.
-PRE_1980_CHAMPIONSHIPS = {
+# The 1977-1979 champions (Blazers, Bullets, Sonics) are now tracked by the live ratings
+# era and excluded here.
+PRE_1977_CHAMPIONSHIPS = {
     'Boston Celtics':         13,  # 1957, 1959-66, 1968, 1969, 1974, 1976
     'Los Angeles Lakers':      1,  # 1972
     'Philadelphia 76ers':      1,  # 1967
     'New York Knicks':         2,  # 1970, 1973
     'Milwaukee Bucks':         1,  # 1971
     'Golden State Warriors':   1,  # 1975
-    'Portland Trail Blazers':  1,  # 1977
-    'Washington Wizards':      1,  # 1978 (as Bullets)
-    'Seattle SuperSonics':     1,  # 1979
 }
 
-PRE_1980_RUNNER_UPS = {
+PRE_1977_RUNNER_UPS = {
     'New York Knicks':         4,  # 1951, 1952, 1953, 1972
     'Boston Celtics':          1,  # 1958
     'Los Angeles Lakers':      8,  # 1962, 1963, 1965, 1966, 1968, 1969, 1970, 1973
     'Milwaukee Bucks':         1,  # 1974
-    'Washington Wizards':      2,  # 1975, 1979 (as Bullets)
+    'Washington Wizards':      1,  # 1975 (as Bullets)
     'Phoenix Suns':            1,  # 1976
-    'Philadelphia 76ers':      1,  # 1977
-    'Seattle SuperSonics':     1,  # 1978
 }
 
-# Running counts: walk chronologically (oldest first), seeded with pre-1980 totals
-_champ_count = dict(PRE_1980_CHAMPIONSHIPS)
-_ru_count    = dict(PRE_1980_RUNNER_UPS)
+# Running counts: walk chronologically (oldest first), seeded with pre-1977 totals
+_champ_count = dict(PRE_1977_CHAMPIONSHIPS)
+_ru_count    = dict(PRE_1977_RUNNER_UPS)
 for entry in reversed(champions):
     ct = entry['champion']['team']
     rt = entry['runner_up']['team']

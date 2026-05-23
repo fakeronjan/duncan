@@ -12,7 +12,7 @@ from datetime import datetime, date
 # CONFIGURATION
 # =========================================================
 
-MIN_SEASON = 1980             # DO NOT CHANGE — affects all historical data
+MIN_SEASON = 1977             # First post-merger season (1976-77). Captures Blazers/Bullets/Sonics championship era.
 
 # Season-aware rolling window: window (game-days) = WINDOW_MULTIPLIER * games-per-team-per-season.
 # At 1.5, an 82-game NBA season gets a 123-day window (was fixed 100 pre-port).
@@ -38,7 +38,7 @@ RECOMPUTE_TAIL_DAYS = 7
 # Regular season game count per season (drives both window sizing and playoff-start
 # threshold). NBA is normally 82 games; lockouts/COVID exceptions noted inline.
 REGULAR_SEASON_GAMES = {
-    **{y: 82 for y in range(1980, 1999)},
+    **{y: 82 for y in range(1977, 1999)},
     1999: 50,  # lockout
     **{y: 82 for y in range(2000, 2012)},
     2012: 66,  # lockout
