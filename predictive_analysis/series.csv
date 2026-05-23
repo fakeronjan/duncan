@@ -1,0 +1,85 @@
+season,team_a,team_b,rating_a,rating_b,rating_diff,duncan_fav,vegas_fav,vegas_g1_spread,actual_winner,actual_loser,series_score,n_games,duncan_correct,vegas_correct,first_game_date
+2020,Los Angeles Lakers,Portland Trail Blazers,3.219239374505191,1.439615247097458,1.779624127407733,Los Angeles Lakers,Los Angeles Lakers,7.0,Los Angeles Lakers,Portland Trail Blazers,4-0,4,True,True,2020-08-20
+2020,Milwaukee Bucks,Orlando Magic,5.544051601871948,0.514841989929955,5.029209611941994,Milwaukee Bucks,Milwaukee Bucks,13.0,Milwaukee Bucks,Orlando Magic,4-0,4,True,True,2020-08-20
+2020,Boston Celtics,Toronto Raptors,6.393630395269423,7.780915417016277,1.3872850217468535,Toronto Raptors,Toronto Raptors,2.0,Boston Celtics,Toronto Raptors,4-3,7,False,False,2020-08-30
+2020,Miami Heat,Milwaukee Bucks,3.1871744460776226,6.510583706895471,3.323409260817848,Milwaukee Bucks,Milwaukee Bucks,5.0,Miami Heat,Milwaukee Bucks,4-1,5,False,False,2020-08-31
+2020,Denver Nuggets,Los Angeles Clippers,0.2054940941521615,7.428930152389207,7.223436058237046,Los Angeles Clippers,Los Angeles Clippers,9.5,Denver Nuggets,Los Angeles Clippers,4-3,7,False,False,2020-09-03
+2020,Houston Rockets,Los Angeles Lakers,2.4959555710172707,4.834383471824551,2.33842790080728,Los Angeles Lakers,Los Angeles Lakers,6.5,Los Angeles Lakers,Houston Rockets,4-1,5,True,True,2020-09-04
+2020,Boston Celtics,Miami Heat,8.046430011051484,5.105119715521283,2.941310295530201,Boston Celtics,Boston Celtics,2.0,Miami Heat,Boston Celtics,4-2,6,False,False,2020-09-15
+2020,Denver Nuggets,Los Angeles Lakers,1.6961504563508667,5.382930136876877,3.6867796805260102,Los Angeles Lakers,Los Angeles Lakers,7.0,Los Angeles Lakers,Denver Nuggets,4-1,5,True,True,2020-09-18
+2020,Los Angeles Lakers,Miami Heat,5.323322481942611,5.950971108473808,0.6276486265311965,Miami Heat,Los Angeles Lakers,4.5,Los Angeles Lakers,Miami Heat,4-2,6,False,True,2020-09-30
+2021,Boston Celtics,Brooklyn Nets,0.8153168344877019,4.418206477455539,3.602889642967837,Brooklyn Nets,Brooklyn Nets,8.5,Brooklyn Nets,Boston Celtics,4-1,5,True,True,2021-05-22
+2021,Dallas Mavericks,Los Angeles Clippers,3.165843541738729,5.078570548516704,1.912727006777975,Los Angeles Clippers,Los Angeles Clippers,6.0,Los Angeles Clippers,Dallas Mavericks,4-3,7,True,True,2021-05-22
+2021,Denver Nuggets,Portland Trail Blazers,4.245967716058072,4.391095784269917,0.14512806821184565,Portland Trail Blazers,Denver Nuggets,1.0,Denver Nuggets,Portland Trail Blazers,4-2,6,False,True,2021-05-22
+2021,Miami Heat,Milwaukee Bucks,1.966927786274686,3.930240758279033,1.963312972004347,Milwaukee Bucks,Milwaukee Bucks,5.5,Milwaukee Bucks,Miami Heat,4-0,4,True,True,2021-05-22
+2021,Atlanta Hawks,New York Knicks,3.0803164385872783,4.053174947284795,0.9728585086975166,New York Knicks,New York Knicks,1.5,Atlanta Hawks,New York Knicks,4-1,5,False,False,2021-05-23
+2021,Los Angeles Lakers,Phoenix Suns,0.6608219717303426,5.454198660502228,4.793376688771885,Phoenix Suns,Phoenix Suns,2.5,Phoenix Suns,Los Angeles Lakers,4-2,6,True,True,2021-05-23
+2021,Memphis Grizzlies,Utah Jazz,2.014138213978299,6.719481630746861,4.705343416768562,Utah Jazz,Utah Jazz,7.5,Utah Jazz,Memphis Grizzlies,4-1,5,True,True,2021-05-23
+2021,Philadelphia 76ers,Washington Wizards,5.687895599417136,0.892707622760173,4.795187976656963,Philadelphia 76ers,Philadelphia 76ers,8.0,Philadelphia 76ers,Washington Wizards,4-1,5,True,True,2021-05-23
+2021,Brooklyn Nets,Milwaukee Bucks,5.587156621990114,5.997149638255573,0.40999301626545925,Milwaukee Bucks,Brooklyn Nets,3.5,Milwaukee Bucks,Brooklyn Nets,4-3,7,True,False,2021-06-05
+2021,Atlanta Hawks,Philadelphia 76ers,4.763741737521524,7.070257633746246,2.306515896224722,Philadelphia 76ers,Philadelphia 76ers,4.5,Atlanta Hawks,Philadelphia 76ers,4-3,7,False,False,2021-06-06
+2021,Denver Nuggets,Phoenix Suns,4.7144229421331865,5.498319149401909,0.7838962072687226,Phoenix Suns,Phoenix Suns,6.0,Phoenix Suns,Denver Nuggets,4-0,4,True,True,2021-06-07
+2021,Los Angeles Clippers,Utah Jazz,5.539224698416771,6.98403375616217,1.4448090577453998,Utah Jazz,Utah Jazz,2.5,Los Angeles Clippers,Utah Jazz,4-2,6,False,False,2021-06-08
+2021,Los Angeles Clippers,Phoenix Suns,7.484678532002987,7.431315255934336,0.053363276068651544,Los Angeles Clippers,Phoenix Suns,4.0,Phoenix Suns,Los Angeles Clippers,4-2,6,False,True,2021-06-20
+2021,Atlanta Hawks,Milwaukee Bucks,5.268726853364378,6.169172709887685,0.9004458565233069,Milwaukee Bucks,Milwaukee Bucks,8.0,Milwaukee Bucks,Atlanta Hawks,4-2,6,True,True,2021-06-23
+2021,Milwaukee Bucks,Phoenix Suns,7.366261416898868,7.906676225862049,0.5404148089631811,Phoenix Suns,Phoenix Suns,5.0,Milwaukee Bucks,Phoenix Suns,4-2,6,False,False,2021-07-06
+2022,Dallas Mavericks,Utah Jazz,3.8009253713476254,3.3171998435809664,0.483725527766659,Dallas Mavericks,Utah Jazz,-5.5,Dallas Mavericks,Utah Jazz,4-2,6,True,False,2022-04-16
+2022,Denver Nuggets,Golden State Warriors,1.9336670644443883,2.172147786428955,0.23848072198456682,Golden State Warriors,Golden State Warriors,6.0,Golden State Warriors,Denver Nuggets,4-1,5,True,True,2022-04-16
+2022,Memphis Grizzlies,Minnesota Timberwolves,7.670072658130566,2.9739692571414853,4.696103400989081,Memphis Grizzlies,Memphis Grizzlies,6.5,Memphis Grizzlies,Minnesota Timberwolves,4-2,6,True,True,2022-04-16
+2022,Philadelphia 76ers,Toronto Raptors,4.2831391916015775,3.6568267230608007,0.6263124685407768,Philadelphia 76ers,Philadelphia 76ers,4.5,Philadelphia 76ers,Toronto Raptors,4-2,6,True,True,2022-04-16
+2022,Atlanta Hawks,Miami Heat,3.5922108693096453,4.642085437331016,1.0498745680213704,Miami Heat,Miami Heat,6.5,Miami Heat,Atlanta Hawks,4-1,5,True,True,2022-04-17
+2022,Boston Celtics,Brooklyn Nets,10.248662026524604,0.8672575491029088,9.381404477421695,Boston Celtics,Boston Celtics,4.5,Boston Celtics,Brooklyn Nets,4-0,4,True,True,2022-04-17
+2022,Chicago Bulls,Milwaukee Bucks,-2.853509723261369,3.12485446081793,5.9783641840792985,Milwaukee Bucks,Milwaukee Bucks,10.5,Milwaukee Bucks,Chicago Bulls,4-1,5,True,True,2022-04-17
+2022,New Orleans Pelicans,Phoenix Suns,1.3961152472296212,6.297333139541178,4.901217892311557,Phoenix Suns,Phoenix Suns,10.0,Phoenix Suns,New Orleans Pelicans,4-2,6,True,True,2022-04-17
+2022,Boston Celtics,Milwaukee Bucks,10.272506161628064,4.022842066779925,6.249664094848138,Boston Celtics,Boston Celtics,5.0,Boston Celtics,Milwaukee Bucks,4-3,7,True,True,2022-05-01
+2022,Golden State Warriors,Memphis Grizzlies,3.0907595644276418,7.900219370957153,4.809459806529511,Memphis Grizzlies,Golden State Warriors,-2.5,Golden State Warriors,Memphis Grizzlies,4-2,6,False,True,2022-05-01
+2022,Dallas Mavericks,Phoenix Suns,4.638878871290406,5.559591190389348,0.9207123190989419,Phoenix Suns,Phoenix Suns,6.5,Dallas Mavericks,Phoenix Suns,4-3,7,False,False,2022-05-02
+2022,Miami Heat,Philadelphia 76ers,6.204070106778669,5.1953382794663545,1.0087318273123147,Miami Heat,Miami Heat,7.5,Miami Heat,Philadelphia 76ers,4-2,6,True,True,2022-05-02
+2022,Boston Celtics,Miami Heat,10.984125816581244,7.335459814568201,3.6486660020130435,Boston Celtics,Miami Heat,4.5,Boston Celtics,Miami Heat,4-3,7,True,False,2022-05-17
+2022,Dallas Mavericks,Golden State Warriors,5.272895251721605,4.374483169301955,0.8984120824196493,Dallas Mavericks,Golden State Warriors,5.5,Golden State Warriors,Dallas Mavericks,4-1,5,False,True,2022-05-18
+2022,Boston Celtics,Golden State Warriors,11.730525376725904,6.015653778793751,5.714871597932153,Boston Celtics,Golden State Warriors,3.5,Golden State Warriors,Boston Celtics,4-2,6,False,True,2022-06-02
+2023,Atlanta Hawks,Boston Celtics,1.2617572820758016,5.695715832104728,4.433958550028926,Boston Celtics,Boston Celtics,10.0,Boston Celtics,Atlanta Hawks,4-2,6,True,True,2023-04-15
+2023,Brooklyn Nets,Philadelphia 76ers,0.4675433716818287,4.958623883934911,4.491080512253083,Philadelphia 76ers,Philadelphia 76ers,8.5,Philadelphia 76ers,Brooklyn Nets,4-0,4,True,True,2023-04-15
+2023,Cleveland Cavaliers,New York Knicks,4.787612283333165,3.79830217469416,0.989310108639005,Cleveland Cavaliers,Cleveland Cavaliers,5.0,New York Knicks,Cleveland Cavaliers,4-1,5,False,False,2023-04-15
+2023,Golden State Warriors,Sacramento Kings,3.3953711481409146,1.6585523513153175,1.736818796825597,Golden State Warriors,Sacramento Kings,1.0,Golden State Warriors,Sacramento Kings,4-3,7,True,False,2023-04-15
+2023,Denver Nuggets,Minnesota Timberwolves,3.085215314291046,1.7005933223899052,1.3846219919011407,Denver Nuggets,Denver Nuggets,8.0,Denver Nuggets,Minnesota Timberwolves,4-1,5,True,True,2023-04-16
+2023,Los Angeles Clippers,Phoenix Suns,2.210192800420955,2.7742719868123635,0.5640791863914085,Phoenix Suns,Phoenix Suns,8.0,Phoenix Suns,Los Angeles Clippers,4-1,5,True,True,2023-04-16
+2023,Los Angeles Lakers,Memphis Grizzlies,3.0074135508354907,3.1365413205346013,0.12912776969911066,Memphis Grizzlies,Memphis Grizzlies,5.0,Los Angeles Lakers,Memphis Grizzlies,4-2,6,False,False,2023-04-16
+2023,Miami Heat,Milwaukee Bucks,0.3281588378471294,4.636001745909746,4.307842908062616,Milwaukee Bucks,Milwaukee Bucks,9.0,Miami Heat,Milwaukee Bucks,4-1,5,False,False,2023-04-16
+2023,Denver Nuggets,Phoenix Suns,3.7805422336940975,3.877415913852403,0.09687368015830566,Phoenix Suns,Denver Nuggets,3.5,Denver Nuggets,Phoenix Suns,4-2,6,False,True,2023-04-29
+2023,Miami Heat,New York Knicks,1.6878383583898846,4.862167801341349,3.1743294429514646,New York Knicks,New York Knicks,4.0,Miami Heat,New York Knicks,4-2,6,False,False,2023-04-30
+2023,Boston Celtics,Philadelphia 76ers,6.037098691700644,5.759171814507871,0.27792687719277254,Boston Celtics,Boston Celtics,10.5,Boston Celtics,Philadelphia 76ers,4-3,7,True,True,2023-05-01
+2023,Golden State Warriors,Los Angeles Lakers,3.9422156328739417,4.238248838486374,0.2960332056124324,Los Angeles Lakers,Golden State Warriors,5.5,Los Angeles Lakers,Golden State Warriors,4-2,6,True,False,2023-05-02
+2023,Denver Nuggets,Los Angeles Lakers,5.12855878100176,4.887851214928973,0.24070756607278732,Denver Nuggets,Denver Nuggets,13.5,Denver Nuggets,Los Angeles Lakers,4-0,4,True,True,2023-05-16
+2023,Boston Celtics,Miami Heat,7.607350862175078,2.8457369295381283,4.7616139326369495,Boston Celtics,Boston Celtics,8.5,Miami Heat,Boston Celtics,4-3,7,False,False,2023-05-17
+2023,Denver Nuggets,Miami Heat,5.999604597485676,4.786724999761783,1.2128795977238926,Denver Nuggets,Denver Nuggets,8.5,Denver Nuggets,Miami Heat,4-1,5,True,True,2023-06-01
+2024,Cleveland Cavaliers,Orlando Magic,0.3907232281859447,1.2517426192820764,0.8610193910961317,Orlando Magic,Cleveland Cavaliers,5.5,Cleveland Cavaliers,Orlando Magic,4-3,7,False,True,2024-04-20
+2024,Denver Nuggets,Los Angeles Lakers,6.169106403932211,2.4351810475733218,3.7339253563588897,Denver Nuggets,Denver Nuggets,6.5,Denver Nuggets,Los Angeles Lakers,4-1,5,True,True,2024-04-20
+2024,Minnesota Timberwolves,Phoenix Suns,4.770057072818695,5.300129692415427,0.5300726195967327,Phoenix Suns,Minnesota Timberwolves,2.5,Minnesota Timberwolves,Phoenix Suns,4-0,4,False,True,2024-04-20
+2024,New York Knicks,Philadelphia 76ers,4.117806200041838,0.0447995242005142,4.073006675841324,New York Knicks,New York Knicks,4.5,New York Knicks,Philadelphia 76ers,4-2,6,True,True,2024-04-20
+2024,Boston Celtics,Miami Heat,9.544928369968249,2.137340011268675,7.407588358699574,Boston Celtics,Boston Celtics,14.5,Boston Celtics,Miami Heat,4-1,5,True,True,2024-04-21
+2024,Dallas Mavericks,Los Angeles Clippers,4.123977729979136,0.9987538702237236,3.1252238597554123,Dallas Mavericks,Dallas Mavericks,-3.0,Dallas Mavericks,Los Angeles Clippers,4-2,6,True,True,2024-04-21
+2024,Indiana Pacers,Milwaukee Bucks,4.120426427209404,1.2413659294439523,2.879060497765452,Indiana Pacers,Indiana Pacers,-1.5,Indiana Pacers,Milwaukee Bucks,4-2,6,True,True,2024-04-21
+2024,New Orleans Pelicans,Oklahoma City Thunder,3.991564453650236,5.689413799894755,1.697849346244519,Oklahoma City Thunder,Oklahoma City Thunder,8.5,Oklahoma City Thunder,New Orleans Pelicans,4-0,4,True,True,2024-04-21
+2024,Denver Nuggets,Minnesota Timberwolves,6.139222425713456,6.360370378187512,0.22114795247405628,Minnesota Timberwolves,Denver Nuggets,4.5,Minnesota Timberwolves,Denver Nuggets,4-3,7,True,False,2024-05-04
+2024,Indiana Pacers,New York Knicks,4.366789041764849,3.5864532806669653,0.7803357610978838,Indiana Pacers,New York Knicks,6.0,Indiana Pacers,New York Knicks,4-3,7,True,False,2024-05-06
+2024,Boston Celtics,Cleveland Cavaliers,10.35983387384946,-0.5267995661697132,10.886633440019173,Boston Celtics,Boston Celtics,12.5,Boston Celtics,Cleveland Cavaliers,4-1,5,True,True,2024-05-07
+2024,Dallas Mavericks,Oklahoma City Thunder,4.933446043114147,7.11549882269629,2.1820527795821434,Oklahoma City Thunder,Oklahoma City Thunder,4.0,Dallas Mavericks,Oklahoma City Thunder,4-2,6,False,False,2024-05-07
+2024,Boston Celtics,Indiana Pacers,9.803645610284812,5.174135320110188,4.629510290174625,Boston Celtics,Boston Celtics,9.5,Boston Celtics,Indiana Pacers,4-0,4,True,True,2024-05-21
+2024,Dallas Mavericks,Minnesota Timberwolves,5.660054074873515,7.00377325546593,1.343719180592415,Minnesota Timberwolves,Minnesota Timberwolves,5.0,Dallas Mavericks,Minnesota Timberwolves,4-1,5,False,False,2024-05-22
+2024,Boston Celtics,Dallas Mavericks,10.105780082816214,7.0565435356150825,3.049236547201131,Boston Celtics,Boston Celtics,6.5,Boston Celtics,Dallas Mavericks,4-1,5,True,True,2024-06-06
+2025,Denver Nuggets,Los Angeles Clippers,3.494557271564705,6.713134437689335,3.21857716612463,Los Angeles Clippers,Denver Nuggets,3.0,Denver Nuggets,Los Angeles Clippers,4-3,7,False,True,2025-04-19
+2025,Detroit Pistons,New York Knicks,3.4122821707218045,2.362514824741248,1.0497673459805563,Detroit Pistons,New York Knicks,7.0,New York Knicks,Detroit Pistons,4-2,6,False,True,2025-04-19
+2025,Indiana Pacers,Milwaukee Bucks,3.3938967849005977,3.391308575324698,0.0025882095758995582,Indiana Pacers,Indiana Pacers,6.0,Indiana Pacers,Milwaukee Bucks,4-1,5,True,True,2025-04-19
+2025,Los Angeles Lakers,Minnesota Timberwolves,3.547280884704532,6.258753693389425,2.7114728086848934,Minnesota Timberwolves,Los Angeles Lakers,4.5,Minnesota Timberwolves,Los Angeles Lakers,4-1,5,True,False,2025-04-19
+2025,Boston Celtics,Orlando Magic,6.454421908657239,0.8684019607444116,5.586019947912828,Boston Celtics,Boston Celtics,12.0,Boston Celtics,Orlando Magic,4-1,5,True,True,2025-04-20
+2025,Cleveland Cavaliers,Miami Heat,7.210174056657053,0.7962270270344497,6.413947029622603,Cleveland Cavaliers,Cleveland Cavaliers,12.5,Cleveland Cavaliers,Miami Heat,4-0,4,True,True,2025-04-20
+2025,Golden State Warriors,Houston Rockets,4.5968619508593145,2.938533104162776,1.6583288466965387,Golden State Warriors,Houston Rockets,2.0,Golden State Warriors,Houston Rockets,4-3,7,True,False,2025-04-20
+2025,Memphis Grizzlies,Oklahoma City Thunder,1.6327323768385478,11.787436707978124,10.154704331139577,Oklahoma City Thunder,Oklahoma City Thunder,13.0,Oklahoma City Thunder,Memphis Grizzlies,4-0,4,True,True,2025-04-20
+2025,Cleveland Cavaliers,Indiana Pacers,8.465491765245211,4.128498320492782,4.336993444752429,Cleveland Cavaliers,Cleveland Cavaliers,8.5,Indiana Pacers,Cleveland Cavaliers,4-1,5,False,False,2025-05-04
+2025,Boston Celtics,New York Knicks,7.311665946308336,2.597787557765423,4.713878388542913,Boston Celtics,Boston Celtics,9.0,New York Knicks,Boston Celtics,4-2,6,False,False,2025-05-05
+2025,Denver Nuggets,Oklahoma City Thunder,4.113515828089477,12.185402302778725,8.071886474689247,Oklahoma City Thunder,Oklahoma City Thunder,10.5,Oklahoma City Thunder,Denver Nuggets,4-3,7,True,True,2025-05-05
+2025,Golden State Warriors,Minnesota Timberwolves,4.778075142168795,7.231812978627545,2.4537378364587497,Minnesota Timberwolves,Minnesota Timberwolves,6.0,Minnesota Timberwolves,Golden State Warriors,4-1,5,True,True,2025-05-06
+2025,Minnesota Timberwolves,Oklahoma City Thunder,8.123713208882519,11.766854151326774,3.643140942444255,Oklahoma City Thunder,Oklahoma City Thunder,7.0,Oklahoma City Thunder,Minnesota Timberwolves,4-1,5,True,True,2025-05-20
+2025,Indiana Pacers,New York Knicks,5.308082062672185,3.189601506706352,2.1184805559658333,Indiana Pacers,New York Knicks,4.5,Indiana Pacers,New York Knicks,4-2,6,True,False,2025-05-21
+2025,Indiana Pacers,Oklahoma City Thunder,5.436402196598332,12.50094883601298,7.064546639414649,Oklahoma City Thunder,Oklahoma City Thunder,10.0,Oklahoma City Thunder,Indiana Pacers,4-3,7,True,True,2025-06-05

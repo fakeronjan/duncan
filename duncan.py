@@ -188,12 +188,12 @@ def prepare_game_data(raw_df):
     df['home_wl'] = np.where(df['home_win'] == 1, "W", "L")
     df['visitor_wl'] = np.where(df['visitor_win'] == 1, "W", "L")
     df['home_result'] = (
-        df['home_wl'] + " vs. " + df['visitor_team_name'] + " "
-        + df['home_pts'].map(str) + "-" + df['visitor_pts'].map(str)
+        df['home_wl'] + " " + df['home_pts'].map(str) + "-" + df['visitor_pts'].map(str)
+        + " vs. " + df['visitor_team_name']
     )
     df['visitor_result'] = (
-        df['visitor_wl'] + " @ " + df['home_team_name'] + " "
-        + df['visitor_pts'].map(str) + "-" + df['home_pts'].map(str)
+        df['visitor_wl'] + " " + df['visitor_pts'].map(str) + "-" + df['home_pts'].map(str)
+        + " @ " + df['home_team_name']
     )
 
     # Flag NBA Cup championship games (excluded from regular-season W-L counts).

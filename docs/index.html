@@ -466,9 +466,9 @@ function renderLastMatch(raw, season, isStale) {
   const display = displayMatch(raw);
   if (!display) return '-';
   const rc = resultClass(raw, isStale);
-  const m = display.match(/^([WL])\s+(vs\.?|@)\s+(.+?)\s+(\d+\s*-\s*\d+.*)$/);
+  const m = display.match(/^([WLT])\s+(\d+\s*-\s*\d+)\s+(vs\.?(?:\s*\(N\))?|@)\s+(.+)$/);
   if (!m) return `<span class="${rc}">${display}</span>`;
-  const [, letter, venue, opponent, score] = m;
+  const [, letter, score, venue, opponent] = m;
   const slug = nameToSlug[opponent.trim()];
   const oppHtml = slug
     ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
