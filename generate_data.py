@@ -75,7 +75,30 @@ TEAM_CONFERENCE = {
 }
 
 
-def conference(team):
+# Era-aware conference history. Teams listed here switched conferences during
+# our coverage window (1977+). The 1980-81 realignment moved Bulls/Bucks/Pacers
+# to the East and Spurs/Rockets to the West; the 1978-79 reshuffle moved
+# Pistons East and Rockets-Pistons swap completed earlier. Lookup is by season
+# (basketball-reference end-year convention).
+TEAM_CONFERENCE_HISTORY = {
+    'Chicago Bulls':       [(1977, 1980, 'West'), (1981, 9999, 'East')],
+    'Milwaukee Bucks':     [(1977, 1980, 'West'), (1981, 9999, 'East')],
+    'Indiana Pacers':      [(1977, 1979, 'West'), (1980, 9999, 'East')],
+    'Detroit Pistons':     [(1977, 1978, 'West'), (1979, 9999, 'East')],
+    'Houston Rockets':     [(1977, 1980, 'East'), (1981, 9999, 'West')],
+    'San Antonio Spurs':   [(1977, 1980, 'East'), (1981, 9999, 'West')],
+    'New Orleans Jazz':    [(1977, 1979, 'East')],  # franchise relocated to Utah after 1979
+}
+
+
+def conference(team, season=None):
+    if season is not None:
+        history = TEAM_CONFERENCE_HISTORY.get(team)
+        if history:
+            s = int(season)
+            for start, end, conf in history:
+                if start <= s <= end:
+                    return conf
     return TEAM_CONFERENCE.get(team, 'Other')
 
 
@@ -265,7 +288,7 @@ standings_data = {
             'rank':            int(r['rank']),
             'team':            r['name'],
             'display_name':    display_name(r['name'], r['season']),
-            'conference':      conference(r['name']),
+            'conference':      conference(r['name'], r['season']),
             'rating':          round(float(r['rating']), 3),
             'record':          clean(r['record']),
             'last_match':      era_aware_last_match(clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(r['name'], str(r['date']), r['season']), r['season']),
@@ -294,7 +317,7 @@ for i, (_, r) in enumerate(eos_top.iterrows()):
         'rank':           i + 1,
         'team':           r['name'],
         'display_name':   display_name(r['name'], r['season']),
-        'conference':     conference(r['name']),
+        'conference':     conference(r['name'], r['season']),
         'season':         int(r['season']),
         'rating':         round(float(r['rating']), 3),
         'record':         clean(r['record']),
@@ -400,7 +423,7 @@ for season in all_seasons:
                 'rank':            int(r['rank']),
                 'team':            r['name'],
                 'display_name':    display_name(r['name'], season),
-                'conference':      conference(r['name']),
+                'conference':      conference(r['name'], season),
                 'rating':          round(float(r['rating']), 3),
                 'record':          clean(r['record']),
                 'regular_record':  reg,
@@ -479,7 +502,7 @@ for season in sorted(df['season'].unique(), reverse=True):
         'champion': {
             'team':           cr['name'],
             'display_name':   display_name(cr['name'], season),
-            'conference':     conference(cr['name']),
+            'conference':     conference(cr['name'], season),
             'rating':         round(float(cr['rating']), 3),
             'rank':           int(cr['rank']),
             'record':         clean(cr['record']),
@@ -490,7 +513,7 @@ for season in sorted(df['season'].unique(), reverse=True):
         'runner_up': {
             'team':           rr['name'],
             'display_name':   display_name(rr['name'], season),
-            'conference':     conference(rr['name']),
+            'conference':     conference(rr['name'], season),
             'rating':         round(float(rr['rating']), 3),
             'rank':           int(rr['rank']),
             'record':         clean(rr['record']),
