@@ -473,7 +473,7 @@ function renderLastMatch(raw, season, isStale) {
   const oppHtml = slug
     ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
     : opponent;
-  return `<span class="${rc}">${letter} ${venue} ${oppHtml} ${score}</span>`;
+  return `<span class="${rc}">${letter} ${score} ${venue} ${oppHtml}</span>`;
 }
 
 // ── Deep-link handlers ──────────────────────────────────────────────────────
