@@ -367,6 +367,7 @@ for team in all_teams:
             entries.append({
                 'date':              str(r['date']),
                 'display_name':      display_name(team, season),
+                'conference':        conference(team, season),
                 'rating':            round(float(r['rating']), 3),
                 'rank':              int(r['rank']),
                 'record':            clean(r['record']),
