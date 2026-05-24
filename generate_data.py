@@ -498,8 +498,8 @@ for season in sorted(df['season'].unique(), reverse=True):
 
     champions.append({
         'season':       int(season),
+        'series':       series_score,
         'final_score':  final_score,
-        'series_score': series_score,
         'champion': {
             'team':           cr['name'],
             'display_name':   display_name(cr['name'], season),
