@@ -769,11 +769,18 @@ function renderTeamTable() {
   const seasons = Object.keys(data.seasons).sort();
   let seasonFilter;
   if (tsView === 'single') {
-    // One-season view: every snapshot in the selected season (each row is already a game-day).
+    // One-season view: every snapshot in the selected season. Mark rows where the
+    // team's last_match hasn't changed since the previous snapshot as stale (covers
+    // synthetic EOS rows on the league's final day for teams eliminated earlier).
     seasonFilter = document.getElementById('season-select').value;
     seasons.forEach(s => {
       if (s !== seasonFilter) return;
-      data.seasons[s].forEach(g => rows.push({...g, season: s}));
+      let prevLastMatch = null;
+      data.seasons[s].forEach(g => {
+        const stale = prevLastMatch != null && g.last_match === prevLastMatch;
+        rows.push({...g, season: s, _isStale: stale});
+        prevLastMatch = g.last_match;
+      });
     });
   } else {
     // Cross-season summary view: one snapshot per season (end of regular season OR end of playoffs).
@@ -801,7 +808,7 @@ function renderTeamTable() {
     return `<tr>
     <td style="white-space:nowrap;color:#888;font-size:12px">${g.date}</td>
     <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555">${seasonCell}</td>
-    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, false)}</td>
+    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, !!g._isStale)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record, g.record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating)}</td>
