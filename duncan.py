@@ -283,9 +283,15 @@ def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
 
 
 def _window_for_season(season):
-    """Season-aware window size: WINDOW_MULTIPLIER × regular-season games per team."""
-    reg_games = REGULAR_SEASON_GAMES.get(int(season), 82)
-    return int(round(reg_games * WINDOW_MULTIPLIER))
+    """Fixed rolling window across all seasons (82 * WINDOW_MULTIPLIER).
+
+    Why fixed not variable: short seasons (1999/2012 lockouts, 2020 bubble, 2021
+    COVID) used to get a proportionally shrunk window, which inflated tiny-sample
+    ratings for whoever ran hot in those years. A constant 123-game-day window
+    pulls extra lookback from the prior season for short years and keeps full
+    seasons unchanged.
+    """
+    return int(round(82 * WINDOW_MULTIPLIER))
 
 
 # Smallest window across any season - floor for the loop's starting ranking_id.
@@ -712,7 +718,10 @@ if __name__ == "__main__":
     master_df = prepare_game_data(raw_df)
 
     # 3. Ratings
-    existing_ratings = pd.read_csv("duncan_ratings.csv")
+    try:
+        existing_ratings = pd.read_csv("duncan_ratings.csv")
+    except FileNotFoundError:
+        existing_ratings = pd.DataFrame(columns=['name', 'rating', 'rank', 'ranking_date', 'ranking_id', 'season'])
     ratings_df = compute_ratings(master_df, existing_ratings)
 
     # 4. Standings
