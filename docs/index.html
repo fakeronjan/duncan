@@ -805,8 +805,14 @@ function renderTeamTable() {
     const seasonCell = era
       ? `${fmtSeason(g.season)}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
       : fmtSeason(g.season);
+    const dateLabel = g.season_flag === 1 ? 'End of regular season'
+                    : g.season_flag === 2 ? 'End of playoffs'
+                    : '';
+    const dateCell = dateLabel
+      ? `${g.date}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${dateLabel}</div>`
+      : g.date;
     return `<tr>
-    <td style="white-space:nowrap;color:#888;font-size:12px">${g.date}</td>
+    <td style="white-space:nowrap;color:#888;font-size:12px">${dateCell}</td>
     <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555">${seasonCell}</td>
     <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, !!g._isStale)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record, g.record)}</td>
