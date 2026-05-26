@@ -301,33 +301,62 @@ standings_data = {
 with open('docs/data/current_standings.json', 'w') as f:
     json.dump(standings_data, f, separators=(',', ':'))
 
-# ── 2. GOAT table ─────────────────────────────────────────────────────────────
-# Only include fully-complete seasons (flag=2 = Finals ended) AND teams that
-# reached the Finals (finals_status >= 1). Filter applied because GOAT is
-# canonically "best championship-contending teams" — strong regular-season
-# teams that flamed out before the Finals are noise in this view.
-print("Writing goat_teams.json...")
-eos_all = df[(df['season_flag'] == 2) & (df['finals_status'] >= 1)].copy()
-eos_top = eos_all.sort_values('rating', ascending=False).head(50).reset_index(drop=True)
+# ── 2. GOAT tables (end-of-RS + end-of-playoffs) ─────────────────────────────
+# Two lists, matching the SAKIC/GRIFFEY fleet pattern:
+#   goat_rs.json — top 50 single-season ratings at end of regular season, all teams.
+#   goat_ps.json — top 50 single-season ratings at end of playoffs, Finals participants only.
+# Both gated to fully-complete seasons (a season is "complete" once a
+# season_flag == 2 row exists for that season — i.e. the Finals have ended).
+print("Writing goat_rs.json + goat_ps.json...")
 
-goat_data = []
-for i, (_, r) in enumerate(eos_top.iterrows()):
-    reg = _reg_record_lookup.get((r['name'], int(r['season'])), '')
-    goat_data.append({
-        'rank':           i + 1,
-        'team':           r['name'],
-        'display_name':   display_name(r['name'], r['season']),
-        'conference':     conference(r['name'], r['season']),
-        'season':         int(r['season']),
-        'rating':         round(float(r['rating']), 3),
-        'record':         clean(r['record']),
-        'regular_record': reg,
-        'playoff_record': playoff_record(r['record'], reg),
-        'finals_status':  int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
-        'cup_status':     int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
-    })
-with open('docs/data/goat_teams.json', 'w') as f:
-    json.dump(goat_data, f, separators=(',', ':'))
+# Short / disrupted seasons — flagged on GOAT rows so the UI can tag them
+# inline. Small samples bias ratings; the tag adds context without altering
+# the model. Matches the SAKIC pattern.
+SHORT_SEASONS = {
+    1999: "lockout 50g",   # 1998-99 lockout: 50-game season
+    2012: "lockout 66g",   # 2011-12 lockout: 66-game season
+    2020: "COVID bubble",  # 2019-20 stopped at COVID, finished in Orlando bubble
+    2021: "COVID 72g",     # 2020-21 COVID-shortened: 72 games
+}
+
+completed_seasons = set(df.loc[df['season_flag'] == 2, 'season'].astype(int).unique())
+
+
+def build_goat(flag, require_finalist):
+    rows = df[(df['season_flag'] == flag) &
+              (df['season'].astype(int).isin(completed_seasons))].copy()
+    if require_finalist:
+        rows = rows[rows['finals_status'].fillna(0) >= 1]
+    rows = rows.sort_values('rating', ascending=False).head(50).reset_index(drop=True)
+    out = []
+    for i, (_, r) in enumerate(rows.iterrows()):
+        s = int(r['season'])
+        reg = _reg_record_lookup.get((r['name'], s), '')
+        out.append({
+            'rank':             i + 1,
+            'team':             r['name'],
+            'display_name':     display_name(r['name'], r['season']),
+            'conference':       conference(r['name'], r['season']),
+            'season':           s,
+            'short_season':     s in SHORT_SEASONS,
+            'short_season_tag': SHORT_SEASONS.get(s, ''),
+            'rating':           round(float(r['rating']), 3),
+            'record':           clean(r['record']),
+            'regular_record':   reg,
+            'playoff_record':   playoff_record(r['record'], reg),
+            'finals_status':    int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
+            'cup_status':       int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
+        })
+    return out
+
+
+goat_rs = build_goat(flag=1, require_finalist=False)
+goat_ps = build_goat(flag=2, require_finalist=True)
+
+with open('docs/data/goat_rs.json', 'w') as f:
+    json.dump(goat_rs, f, separators=(',', ':'))
+with open('docs/data/goat_ps.json', 'w') as f:
+    json.dump(goat_ps, f, separators=(',', ':'))
 
 # ── 3. Per-team JSON files ───────────────────────────────────────────────────
 print("Writing per-team JSON files...")

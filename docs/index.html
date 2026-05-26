@@ -199,6 +199,7 @@
   .finish-champion { background: #c8a84b; color: #1a6b8a; }
   .finish-runner   { background: #ddd; color: #444; }
   .conf-pill       { background: #f4f4f4; color: #555; border: 1px solid #e8e8e8; }
+  .short-season-tag { background: #fef3e0; color: #b56500; border: 1px solid #f5d6a3; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; letter-spacing: 0.5px; white-space: nowrap; }
 
   .last-match-cell {
     font-size: 12px;
@@ -356,7 +357,8 @@
 
 <!-- ── GOAT TABLE ───────────────────────────────────────────────────────── -->
 <div id="goat" class="tab">
-  <p class="data-note">Top 50 single-season ratings · Data covers 1980 through the current season</p>
+  <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (all teams) and end of playoffs (NBA Finals participants only).</p>
+  <div class="conf-pills" id="goat-mode-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
 </div>
@@ -365,7 +367,9 @@
 const BASE = './data';
 let currentSeasonData = null;
 let currentSnapshot   = null;
-let goatData          = null;
+let goatDataRS        = null;
+let goatDataPS        = null;
+let goatMode          = 'rs';  // 'rs' or 'ps'
 let teamsIndex        = null;
 let teamCache         = {};
 let nameToSlug        = {};  // canonical + historical name → slug, built from teamsIndex
@@ -978,8 +982,12 @@ function renderChampions() {
 // ── GOAT Table ────────────────────────────────────────────────────────────────
 async function loadGoat() {
   try {
-    const res = await fetch(`${BASE}/goat_teams.json`);
-    goatData = await res.json();
+    const [r1, r2] = await Promise.all([
+      fetch(`${BASE}/goat_rs.json`),
+      fetch(`${BASE}/goat_ps.json`),
+    ]);
+    goatDataRS = await r1.json();
+    goatDataPS = await r2.json();
     renderGoat();
   } catch(e) {
     document.getElementById('goat-table-wrap').innerHTML =
@@ -988,19 +996,23 @@ async function loadGoat() {
 }
 
 function renderGoat() {
-  if (!goatData) return;
+  const data = goatMode === 'rs' ? goatDataRS : goatDataPS;
+  if (!data) return;
   const teams = goatConf === 'all'
-    ? goatData
-    : goatData.filter(t => t.conference === goatConf);
+    ? data
+    : data.filter(t => t.conference === goatConf);
   const rows = teams.map(t => {
     const label = t.display_name || t.team;
     const slug = nameToSlug[t.team] || nameToSlug[label];
     const teamTd = slug
       ? `<td class="team-cell linked" data-team-slug="${slug}" data-season="${t.season}">${label}</td>`
       : `<td class="team-cell">${label}</td>`;
+    const shortTag = t.short_season
+      ? ` <span class="short-season-tag" title="Shortened season (${t.short_season_tag}). Small samples can inflate ratings.">${t.short_season_tag.toUpperCase()}</span>`
+      : '';
     return `<tr>
     <td class="rank-cell">${t.rank}</td>
-    <td class="season-cell linked" data-season-link="${t.season}" style="text-align:center">${fmtSeason(t.season)}</td>
+    <td class="season-cell linked" data-season-link="${t.season}" style="text-align:center;white-space:nowrap">${fmtSeason(t.season)}${shortTag}</td>
     ${teamTd}
     <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
     <td>${ratingBar(t.rating)}</td>
@@ -1029,6 +1041,10 @@ function renderGoat() {
 buildConfPills('standings-conf-pills', standingsConf, v => { standingsConf = v; renderStandings(); });
 buildConfPills('ts-conf-pills',        tsConf,        v => { tsConf = v; populateTeamSelect(); });
 buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; renderGoat(); });
+buildConfPills('goat-mode-pills',      goatMode,      v => { goatMode = v; renderGoat(); }, [
+  { value: 'rs', label: 'End of regular season' },
+  { value: 'ps', label: 'End of playoffs' },
+]);
 buildConfPills('ts-view-pills', tsView, v => {
   tsView = v;
   document.getElementById('season-select').style.display   = (v === 'single') ? '' : 'none';
