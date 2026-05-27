@@ -254,6 +254,15 @@ _reg_record_lookup = {
     for _, row in df[df['season_flag'] == 1].iterrows()
 }
 
+# End-of-playoffs combined record per (team, season). Used to derive the
+# eventual playoff portion via _parse_record subtraction below — so GOAT
+# rows show the team's playoff record regardless of which snapshot the row
+# itself comes from (RS-end snapshots wouldn't otherwise know it).
+_full_record_lookup = {
+    (row['name'], int(row['season'])): row['record']
+    for _, row in df[df['season_flag'] == 2].iterrows()
+}
+
 
 def _parse_record(rec):
     if not rec or pd.isna(rec):
@@ -332,6 +341,7 @@ def build_goat(flag, require_finalist):
     for i, (_, r) in enumerate(rows.iterrows()):
         s = int(r['season'])
         reg = _reg_record_lookup.get((r['name'], s), '')
+        full = _full_record_lookup.get((r['name'], s), '')
         out.append({
             'rank':             i + 1,
             'team':             r['name'],
@@ -341,9 +351,9 @@ def build_goat(flag, require_finalist):
             'short_season':     s in SHORT_SEASONS,
             'short_season_tag': SHORT_SEASONS.get(s, ''),
             'rating':           round(float(r['rating']), 3),
-            'record':           clean(r['record']),
+            'record':           clean(full or r['record']),
             'regular_record':   reg,
-            'playoff_record':   playoff_record(r['record'], reg),
+            'playoff_record':   playoff_record(full, reg) if full else '',
             'finals_status':    int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
             'cup_status':       int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
         })
