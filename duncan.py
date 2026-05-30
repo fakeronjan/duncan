@@ -205,7 +205,7 @@ def prepare_game_data(raw_df):
 
 
 # =========================================================
-# MASSEY RATINGS — homebrew weighted least squares solver
+# FAKERONJAN WLS RATINGS — homebrew weighted least squares solver
 # =========================================================
 
 def _apply_margin_transform(margin, transform, cap):
@@ -224,9 +224,9 @@ def _apply_margin_transform(margin, transform, cap):
     raise ValueError(f"Unknown MARGIN_TRANSFORM: {transform}")
 
 
-def _solve_massey(window_df, hca, weighting_mode, margin_transform, margin_cap):
+def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap):
     """
-    Solve for team Massey ratings on a single rolling window.
+    Solve for team fakeronjan WLS ratings on a single rolling window.
 
     Builds X (n_games × n_teams) with +1 for home, -1 for visitor, y from
     the transformed HCA-adjusted home margin, and W from the recency
@@ -304,7 +304,7 @@ _MIN_WINDOW = min(_window_for_season(s) for s in REGULAR_SEASON_GAMES)
 
 def compute_ratings(master_df, existing_ratings_df):
     """
-    Compute daily Massey power ratings using a season-aware rolling window
+    Compute daily fakeronjan WLS power ratings using a season-aware rolling window
     (WINDOW_MULTIPLIER × games-per-team-this-season). Skips dates already
     present in existing_ratings_df. Re-processes the most recent
     RECOMPUTE_TAIL_DAYS ranking_ids each run to absorb late-arriving data.
@@ -359,7 +359,7 @@ def compute_ratings(master_df, existing_ratings_df):
         season = window['season'].max()
         print(current_date)
 
-        ranked = _solve_massey(
+        ranked = _solve_wls(
             window,
             hca=HOME_COURT_ADJUSTMENT,
             weighting_mode=WEIGHTING_MODE,
