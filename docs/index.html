@@ -960,7 +960,11 @@ function renderTeamTable() {
   const canonical = data.team;
   const tableRows = [...rows].reverse().map(g => {
     const era = (g.display_name && g.display_name !== canonical) ? g.display_name : '';
-    const seasonCellRaw = `${fmtSeason(g.season)}${seasonTag(g.season)}`;
+    // In single-season view the top footnote already gives the disruption
+    // context — no need to repeat the badge on every game row.
+    const seasonCellRaw = (tsView === 'single')
+      ? fmtSeason(g.season)
+      : `${fmtSeason(g.season)}${seasonTag(g.season)}`;
     const seasonCell = era
       ? `${seasonCellRaw}<div style="font-size:10px;color:#999;font-style:italic;line-height:1.2">${era}</div>`
       : seasonCellRaw;
