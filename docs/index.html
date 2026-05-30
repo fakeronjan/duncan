@@ -228,6 +228,8 @@
   .disrupted-note li:last-child { margin-bottom: 0; }
   .disrupted-note .short-season-tag { margin-left: 0; margin-right: 4px; }
   .disrupted-note-bottom { margin-top: 12px; margin-bottom: 0; }
+  .season-tag-line { margin-top: 3px; line-height: 1; }
+  .season-tag-line .short-season-tag { margin-left: 0; }
 
   .last-match-cell {
     font-size: 12px;
@@ -481,7 +483,7 @@ function seasonTag(season) {
   const info = disruptedSeasons[String(season)];
   if (!info) return '';
   const cat = info.category || 'labor';
-  return ` <span class="short-season-tag tag-${cat}" title="${info.note}">${info.tag.toUpperCase()}</span>`;
+  return `<div class="season-tag-line"><span class="short-season-tag tag-${cat}" title="${info.note}">${info.tag.toUpperCase()}</span></div>`;
 }
 // Render a footnote block listing the unique disrupted seasons in the given list.
 // `seasons` can be an array of any season-like values; dups + non-disrupted are ignored.
