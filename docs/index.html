@@ -227,6 +227,7 @@
   .disrupted-note li { margin-bottom: 3px; line-height: 1.45; }
   .disrupted-note li:last-child { margin-bottom: 0; }
   .disrupted-note .short-season-tag { margin-left: 0; margin-right: 4px; }
+  .disrupted-note-bottom { margin-top: 12px; margin-bottom: 0; }
 
   .last-match-cell {
     font-size: 12px;
@@ -441,6 +442,7 @@
     <svg id="season-chart"></svg>
   </div>
   <div id="team-table-wrap"><p class="loading">Select a team above.</p></div>
+  <div class="disrupted-note disrupted-note-bottom" id="team-summary-disrupted-note-bottom" style="display:none"></div>
 </div>
 
 <!-- ── CHAMPIONS (League History) ────────────────────────────────────────── -->
@@ -448,8 +450,8 @@
   <p class="data-note">
     Counts reflect titles won under the franchise's current city/name. Relocations are treated as separate franchises - e.g., Minneapolis Lakers' 5 titles (1949-1954) aren't included in the Los Angeles Lakers' count.
   </p>
-  <div class="disrupted-note" id="champions-disrupted-note" style="display:none"></div>
   <div id="history-table-wrap"><p class="loading">Loading champions...</p></div>
+  <div class="disrupted-note disrupted-note-bottom" id="champions-disrupted-note" style="display:none"></div>
 </div>
 
 <!-- ── GOAT TABLE ───────────────────────────────────────────────────────── -->
@@ -457,8 +459,8 @@
   <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (all teams) and end of playoffs (NBA Finals participants only).</p>
   <div class="conf-pills" id="goat-mode-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
-  <div class="disrupted-note" id="goat-disrupted-note" style="display:none"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
+  <div class="disrupted-note disrupted-note-bottom" id="goat-disrupted-note" style="display:none"></div>
 </div>
 
 <script>
@@ -939,12 +941,16 @@ function renderTeamTable() {
 
   drawChart(rows, seasonFilter);
 
-  // Disrupted-season footnote: single-season view -> based on selected season;
-  // cross-season view -> based on all visible rows.
-  const noteSeasons = (tsView === 'single')
-    ? [seasonFilter]
-    : rows.map(g => g.season);
-  updateDisruptedNote('team-summary-disrupted-note', noteSeasons);
+  // Disrupted-season footnote: single-season view -> top, based on selected;
+  // cross-season view -> bottom, based on visible rows. Always clear the
+  // unused element so switching modes hides the stale one.
+  if (tsView === 'single') {
+    updateDisruptedNote('team-summary-disrupted-note', [seasonFilter]);
+    updateDisruptedNote('team-summary-disrupted-note-bottom', []);
+  } else {
+    updateDisruptedNote('team-summary-disrupted-note-bottom', rows.map(g => g.season));
+    updateDisruptedNote('team-summary-disrupted-note', []);
+  }
 
   // For franchises that have changed names, show the era display name
   // beneath the season number when it differs from the canonical (the
