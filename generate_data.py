@@ -318,14 +318,33 @@ with open('docs/data/current_standings.json', 'w') as f:
 # season_flag == 2 row exists for that season — i.e. the Finals have ended).
 print("Writing goat_rs.json + goat_ps.json...")
 
-# Short / disrupted seasons — flagged on GOAT rows so the UI can tag them
-# inline. Small samples bias ratings; the tag adds context without altering
-# the model. Matches the SAKIC pattern.
+# Short / disrupted seasons — flagged on GOAT/Standings/Champions/TeamSummary
+# rows so the UI can tag them inline. Small samples bias ratings; the tag
+# adds context without altering the model. Categories drive UI color:
+#   'cancelled' (red)  — season or major portion never played
+#   'labor'     (amber) — strike or lockout shortened a played season
+#   'covid'     (yellow) — COVID-related disruption
 SHORT_SEASONS = {
-    1999: "lockout 50g",   # 1998-99 lockout: 50-game season
-    2012: "lockout 66g",   # 2011-12 lockout: 66-game season
-    2020: "COVID bubble",  # 2019-20 stopped at COVID, finished in Orlando bubble
-    2021: "COVID 72g",     # 2020-21 COVID-shortened: 72 games
+    1999: {
+        'tag': 'lockout 50g',
+        'category': 'labor',
+        'note': "The 1998-99 season was shortened to 50 games by a lockout that ran from July 1998 to January 1999.",
+    },
+    2012: {
+        'tag': 'lockout 66g',
+        'category': 'labor',
+        'note': "The 2011-12 season was shortened to 66 games by a lockout that ran from July 2011 to December 2011.",
+    },
+    2020: {
+        'tag': 'COVID bubble',
+        'category': 'covid',
+        'note': "The 2019-20 regular season was halted in March 2020 with ~65-70 games played per team; the season resumed in a single-site bubble in Orlando in July 2020.",
+    },
+    2021: {
+        'tag': 'COVID 72g',
+        'category': 'covid',
+        'note': "The 2020-21 season was shortened to 72 games and started two months late (Dec 22) due to ongoing COVID disruption.",
+    },
 }
 
 completed_seasons = set(df.loc[df['season_flag'] == 2, 'season'].astype(int).unique())
@@ -348,8 +367,10 @@ def build_goat(flag, require_finalist):
             'display_name':     display_name(r['name'], r['season']),
             'conference':       conference(r['name'], r['season']),
             'season':           s,
-            'short_season':     s in SHORT_SEASONS,
-            'short_season_tag': SHORT_SEASONS.get(s, ''),
+            'short_season':          s in SHORT_SEASONS,
+            'short_season_tag':      SHORT_SEASONS.get(s, {}).get('tag', '')      if s in SHORT_SEASONS else '',
+            'short_season_category': SHORT_SEASONS.get(s, {}).get('category', '') if s in SHORT_SEASONS else '',
+            'short_season_note':     SHORT_SEASONS.get(s, {}).get('note', '')     if s in SHORT_SEASONS else '',
             'rating':           round(float(r['rating']), 3),
             'record':           clean(full or r['record']),
             'regular_record':   reg,
@@ -484,6 +505,12 @@ seasons_meta = {
     'first_date': str(games['date_game'].min()),  # actual first game (not first rated date)
     'last_date':  str(games['date_game'].max()),
     'generated_at': datetime.now(timezone.utc).isoformat(),
+    # Fleet-wide disrupted-season lookup — SPA references this to render
+    # tags + footnotes consistently across Standings / Team Summary / Champions / GOAT.
+    'disrupted_seasons': {
+        str(year): {'tag': info['tag'], 'category': info['category'], 'note': info['note']}
+        for year, info in SHORT_SEASONS.items()
+    },
 }
 with open('docs/data/seasons_index.json', 'w') as f:
     json.dump(seasons_meta, f, separators=(',', ':'))
