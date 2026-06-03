@@ -1461,9 +1461,13 @@ function renderRepeatChamps() {
     return;
   }
 
-  const body = runs.map(run =>
-    run.map((e, i) => pairRow(e, i === run.length - 1)).join('')
-  ).join('');
+  // Rows within a block also render newest-first; the row-group-end border
+  // lives on the last RENDERED row (which is the OLDEST season after the
+  // reverse) so it visually separates from the next block above.
+  const body = runs.map(run => {
+    const rev = [...run].reverse();
+    return rev.map((e, i) => pairRow(e, i === rev.length - 1)).join('');
+  }).join('');
   document.getElementById('history-rank-table-wrap').innerHTML =
     `<table><thead><tr>${PAIR_HEAD}</tr></thead><tbody>${body}</tbody></table>`;
   attachLinks();
@@ -1522,9 +1526,11 @@ function renderRematches() {
     return;
   }
 
-  const body = groups.map(group =>
-    group.map((e, i) => pairRow(e, i === group.length - 1)).join('')
-  ).join('');
+  // Same newest-first within each group as renderRepeatChamps.
+  const body = groups.map(group => {
+    const rev = [...group].reverse();
+    return rev.map((e, i) => pairRow(e, i === rev.length - 1)).join('');
+  }).join('');
   document.getElementById('history-rank-table-wrap').innerHTML =
     `<table><thead><tr>${PAIR_HEAD}</tr></thead><tbody>${body}</tbody></table>`;
   attachLinks();
