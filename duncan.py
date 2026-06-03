@@ -536,46 +536,80 @@ def assemble_final(master_df, ratings_df, standings_df):
     # -------------------------------------------------------------------------
     final_df['season_flag'] = 0
 
-    # Detect NBA Finals champion + runner-up per season from playoff games
-    # (defined here so season_is_fully_complete can derive from it instead of
-    # using a calendar cushion). Includes a 7-day "last game in data is old
-    # enough" cushion to disambiguate Conference Finals vs NBA Finals clinch
-    # games (both best-of-7), but no fixed-date dependency — the moment the
-    # NBA Finals are complete and a week has passed, the season flips
-    # complete.
-    def detect_finals_champion(season_games):
-        sg = season_games.sort_values('date_game')
-        if sg.empty:
+    # Detect NBA Finals champion + runner-up via bracket walk over post-RS
+    # games. For each playoff matchup (a sorted team pair), the H2H winner
+    # is the team with more wins; in-progress matchups (tied H2H) are
+    # skipped. A team is "still in" if their LATEST matchup was a win
+    # (handles 8-seed play-in arc: lost 7-vs-8 then won Game 3 -> still in).
+    # When exactly one team is still in, they're the champion, and their
+    # latest opponent is the runner-up. No date cushion — the structure of
+    # the bracket distinguishes CF clinch (2 teams still in) from Finals
+    # clinch (1 team still in).
+    def detect_finals_champion(season_games, rs_end_date):
+        if rs_end_date is None:
             return None, None
-        last = sg.iloc[-1]
-        last_date = pd.to_datetime(last['date_game']).date()
-        if (date.today() - last_date).days < 7:
+        pg = season_games[pd.to_datetime(season_games['date_game']) > pd.Timestamp(rs_end_date)].copy()
+        if pg.empty:
             return None, None
-        a = last['home_team_name']
-        b = last['visitor_team_name']
-        last_dt = pd.Timestamp(last_date)
-        window_start = last_dt - pd.Timedelta(days=21)
-        sg_dt = pd.to_datetime(sg['date_game'])
-        h2h = sg[
-            (sg_dt >= window_start) & (sg_dt <= last_dt) &
-            (((sg['home_team_name'] == a) & (sg['visitor_team_name'] == b)) |
-             ((sg['home_team_name'] == b) & (sg['visitor_team_name'] == a)))
-        ]
-        a_wins = (((h2h['home_team_name'] == a) & (h2h['home_win'] == 1)) |
-                  ((h2h['visitor_team_name'] == a) & (h2h['home_win'] == 0))).sum()
-        b_wins = len(h2h) - a_wins
-        if a_wins >= 4:
-            return a, b
-        if b_wins >= 4:
-            return b, a
-        return None, None
+        pg['date_game'] = pd.to_datetime(pg['date_game'])
+        pg['_matchup'] = pg.apply(
+            lambda r: tuple(sorted([r['home_team_name'], r['visitor_team_name']])),
+            axis=1
+        )
+        # Split each matchup's games into consecutive series (gap > 10 days
+        # = a new series). Handles formats where the same pair could play
+        # in two separate stages (e.g. NBA 2020 bubble had no such mix, but
+        # NHL 2020 bubble had round-robin + playoff series for same pairs;
+        # the rule is harmless for normal seasons where every pair plays
+        # exactly one series).
+        team_history = {}  # team -> list of (last_game_date, won, opponent)
+        for matchup, mg in pg.groupby('_matchup'):
+            a, b = matchup
+            mg_sorted = mg.sort_values('date_game').reset_index(drop=True)
+            current_idx = [0]
+            for i in range(1, len(mg_sorted)):
+                gap = (mg_sorted.loc[i, 'date_game'] - mg_sorted.loc[i-1, 'date_game']).days
+                if gap > 10:
+                    # Close out the current series
+                    series_df = mg_sorted.iloc[current_idx]
+                    _process_series(series_df, a, b, team_history)
+                    current_idx = [i]
+                else:
+                    current_idx.append(i)
+            series_df = mg_sorted.iloc[current_idx]
+            _process_series(series_df, a, b, team_history)
+        still_in = []
+        for team, hist in team_history.items():
+            hist.sort(key=lambda x: x[0])
+            if hist[-1][1]:
+                still_in.append((team, hist))
+        if len(still_in) != 1:
+            return None, None
+        champion, hist = still_in[0]
+        _, _, runner_up = hist[-1]
+        return champion, runner_up
+
+    def _process_series(series_df, a, b, team_history):
+        a_wins = (((series_df['home_team_name'] == a) & (series_df['home_win'] == 1)) |
+                  ((series_df['visitor_team_name'] == a) & (series_df['home_win'] == 0))).sum()
+        b_wins = len(series_df) - a_wins
+        if a_wins > b_wins:
+            winner, loser = a, b
+        elif b_wins > a_wins:
+            winner, loser = b, a
+        else:
+            return
+        last_date = series_df['date_game'].max()
+        team_history.setdefault(winner, []).append((last_date, True, loser))
+        team_history.setdefault(loser, []).append((last_date, False, winner))
 
     _finals_results = {}  # season -> (champion, runner_up)
     for season in final_df['season'].unique():
         season_games = master_df[master_df['season'] == season]
         if season_games.empty:
             continue
-        champ, ru = detect_finals_champion(season_games)
+        rs_end = _get_regular_season_end_date(master_df, season)
+        champ, ru = detect_finals_champion(season_games, rs_end)
         if champ is not None:
             _finals_results[season] = (champ, ru)
 
