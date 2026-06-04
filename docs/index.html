@@ -497,10 +497,10 @@
       <button data-rank="worst-champs">Worst champs</button>
       <button data-rank="best-losers">Best losers</button>
       <button data-rank="worst-losers">Worst losers</button>
-      <button data-rank="best-off-champs">Best Off champs</button>
-      <button data-rank="worst-off-champs">Worst Off champs</button>
-      <button data-rank="best-def-champs">Best Def champs</button>
-      <button data-rank="worst-def-champs">Worst Def champs</button>
+      <button data-rank="best-off-champs">Best offense champs</button>
+      <button data-rank="best-def-champs">Best defense champs</button>
+      <button data-rank="worst-off-champs">Worst offense champs</button>
+      <button data-rank="worst-def-champs">Worst defense champs</button>
       <button data-rank="best-matchup">Best matchup</button>
       <button data-rank="worst-matchup">Worst matchup</button>
       <button data-rank="closest">Closest predicted</button>
@@ -1330,6 +1330,7 @@ function renderRankings(rankType) {
   const isOff       = OFF_MODES.has(rankType);
   const isDef       = DEF_MODES.has(rankType);
   const isPreFinals = PRE_FINALS_MODES.has(rankType);
+  const metricLabel = isOff ? 'Offense' : isDef ? 'Defense' : 'Rating';
   const entries = (championsData['NBA'] || []).filter(e => {
     if (!e.champion || !e.runner_up) return false;
     if (isOff) return e.champion.rating_o != null && e.runner_up.rating_o != null;
@@ -1432,11 +1433,11 @@ function renderRankings(rankType) {
 
   document.getElementById('history-rank-note').textContent = note;
   document.getElementById('history-rank-table-wrap').innerHTML =
-    sorted.length ? renderRankingTable(sorted, mode) : '<p class="loading">No data.</p>';
+    sorted.length ? renderRankingTable(sorted, mode, metricLabel) : '<p class="loading">No data.</p>';
   attachLinks();
 }
 
-function renderRankingTable(rows, mode) {
+function renderRankingTable(rows, mode, metricLabel) {
   const showCombined = (mode === 'matchup');
   const showDiff     = (mode === 'spread');
   const isPreFinals  = showCombined || showDiff;
@@ -1454,10 +1455,14 @@ function renderRankingTable(rows, mode) {
     ? `<th class="sort-col">Pred. Diff${preTag}</th>`
     : '';
 
+  // The headed-metric column label defaults to "Rating" but switches to
+  // "Offense" / "Defense" when an O/D list is active so the visible
+  // sort key matches the list semantics.
+  const label = metricLabel || 'Rating';
   const sortLeftReact = !isPreFinals;
   const leftReactHeader = sortLeftReact
-    ? `<th class="col-champ sort-col">Rating</th>`
-    : `<th class="col-champ">Rating${preTag}</th>`;
+    ? `<th class="col-champ sort-col">${label}</th>`
+    : `<th class="col-champ">${label}${preTag}</th>`;
 
   const head = `
     <th>#</th>
@@ -1469,7 +1474,7 @@ function renderRankingTable(rows, mode) {
     <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
     <th class="col-ru">${rightLabel}</th>
     <th class="col-ru col-hide-mobile">Rank</th>
-    <th class="col-ru">Rating${preTag}</th>
+    <th class="col-ru">${label}${preTag}</th>
     <th class="col-ru col-hide-mobile">W-L</th>
     ${metricHeader}`;
 
