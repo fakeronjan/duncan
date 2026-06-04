@@ -345,18 +345,35 @@ _to_eliminated = {}           # (season, team) -> elimination date (None if neve
 _to_field = {}                # season -> set of teams in playoffs
 
 
+def _to_clinch_threshold(season):
+    """Era-aware first-round clinch threshold (NBA R1 format moved from BO3
+    to BO5 to BO7 over the data window). For 2003+ all rounds are BO7 so
+    the BO7 4-win threshold also correctly handles in-progress series at
+    1-0 / 2-1 (won't falsely mark as decided). For 1984-2002 the threshold
+    of 3 captures both BO5 R1 series and BO7 later rounds in closed
+    historical data (no in-progress R2+ snapshots in those years). For
+    pre-1984 the BO3 R1 threshold is 2."""
+    s = int(season)
+    if s >= 2003:
+        return 4
+    if s >= 1984:
+        return 3
+    return 2
+
+
 def _to_proc_series(sub, a, b, history, season):
     aw = (((sub['home_team_name']==a)&(sub['home_win']==1))|((sub['visitor_team_name']==a)&(sub['home_win']==0))).sum()
     bw = len(sub) - aw
-    if aw >= 4 and aw > bw:
+    clinch = _to_clinch_threshold(season)
+    if aw >= clinch and aw > bw:
         winner, loser = a, b
-    elif bw >= 4 and bw > aw:
+    elif bw >= clinch and bw > aw:
         winner, loser = b, a
     else:
         return
-    clinch = sub['date_game'].max()
-    history.setdefault(winner, []).append((clinch, True))
-    history.setdefault(loser,  []).append((clinch, False))
+    cd = sub['date_game'].max()
+    history.setdefault(winner, []).append((cd, True))
+    history.setdefault(loser,  []).append((cd, False))
 
 
 for s, sg_all in games_to.groupby('season'):
@@ -397,12 +414,13 @@ for s, sg_all in games_to.groupby('season'):
         elim = next((d for (d, w) in entries if not w), None)
         _to_eliminated[(s, team)] = elim
 
-# Champion per season (4 series wins, no losses)
+# Champion per season: the team whose bracket history is all wins, no
+# losses (they advanced through every series they played). Works across
+# eras even though the number of series varies — 4 in modern bracket, 3
+# for bye'd top seeds in the pre-1984 12-team format.
 _to_champion = {}
 for (s, team), entries in _to_clinches.items():
-    wins = [e for e in entries if e[1]]
-    losses = [e for e in entries if not e[1]]
-    if len(wins) >= 4 and not losses:
+    if entries and all(e[1] for e in entries):
         _to_champion[s] = team
 
 # games_played(season, team, snap_date)
