@@ -186,6 +186,18 @@ def slug(name):
     return re.sub(r'[^\w]', '_', name).strip('_')
 
 
+def _od_fields(r):
+    """Return rating_o/rating_d/rank_o/rank_d safely from a row. Returns
+    None for missing values so downstream consumers (UI / JSON) can
+    render '-' rather than '0'."""
+    return {
+        'rating_o': round(float(r['rating_o']), 3) if 'rating_o' in r and not pd.isna(r['rating_o']) else None,
+        'rating_d': round(float(r['rating_d']), 3) if 'rating_d' in r and not pd.isna(r['rating_d']) else None,
+        'rank_o':   int(r['rank_o']) if 'rank_o' in r and not pd.isna(r['rank_o']) else None,
+        'rank_d':   int(r['rank_d']) if 'rank_d' in r and not pd.isna(r['rank_d']) else None,
+    }
+
+
 def _played(result):
     """True iff this row represents an actual game played. Upstream now
     writes empty strings for non-game-days (was 'No Game' previously) —
@@ -299,6 +311,7 @@ standings_data = {
             'display_name':    display_name(r['name'], r['season']),
             'conference':      conference(r['name'], r['season']),
             'rating':          round(float(r['rating']), 3),
+            **_od_fields(r),
             'record':          clean(r['record']),
             'last_match':      era_aware_last_match(clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(r['name'], str(r['date']), r['season']), r['season']),
             'finals_status':   int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
@@ -372,6 +385,7 @@ def build_goat(flag, require_finalist):
             'short_season_category': SHORT_SEASONS.get(s, {}).get('category', '') if s in SHORT_SEASONS else '',
             'short_season_note':     SHORT_SEASONS.get(s, {}).get('note', '')     if s in SHORT_SEASONS else '',
             'rating':           round(float(r['rating']), 3),
+            **_od_fields(r),
             'record':           clean(full or r['record']),
             'regular_record':   reg,
             'playoff_record':   playoff_record(full, reg) if full else '',
@@ -430,6 +444,7 @@ for team in all_teams:
                 'conference':        conference(team, season),
                 'rating':            round(float(r['rating']), 3),
                 'rank':              int(r['rank']),
+                **_od_fields(r),
                 'record':            clean(r['record']),
                 'regular_record':    reg,
                 'playoff_record':    po,
@@ -486,6 +501,7 @@ for season in all_seasons:
                 'display_name':    display_name(r['name'], season),
                 'conference':      conference(r['name'], season),
                 'rating':          round(float(r['rating']), 3),
+                **_od_fields(r),
                 'record':          clean(r['record']),
                 'regular_record':  reg,
                 'playoff_record':  po,
@@ -555,6 +571,7 @@ def _build_pre_finals_lookup():
                 'rating': round(float(r['rating']), 3),
                 'rank':   int(r['rank']),
                 'record': clean(r['record']),
+                **_od_fields(r),
             }
     return out
 
@@ -569,6 +586,10 @@ def pre_finals_fields(name, season, reg_record):
     return {
         'rating_pre':         p['rating'],
         'rank_pre':           p['rank'],
+        'rating_o_pre':       p.get('rating_o'),
+        'rating_d_pre':       p.get('rating_d'),
+        'rank_o_pre':         p.get('rank_o'),
+        'rank_d_pre':         p.get('rank_d'),
         'playoff_record_pre': playoff_record(p['record'], reg_record),
     }
 
@@ -627,6 +648,7 @@ for season in sorted(df['season'].unique(), reverse=True):
             'conference':     conference(cr['name'], season),
             'rating':         round(float(cr['rating']), 3),
             'rank':           int(cr['rank']),
+            **_od_fields(cr),
             'record':         clean(cr['record']),
             'regular_record': champ_reg,
             'playoff_record': playoff_record(cr['record'], champ_reg),
@@ -639,6 +661,7 @@ for season in sorted(df['season'].unique(), reverse=True):
             'conference':     conference(rr['name'], season),
             'rating':         round(float(rr['rating']), 3),
             'rank':           int(rr['rank']),
+            **_od_fields(rr),
             'record':         clean(rr['record']),
             'regular_record': ru_reg,
             'playoff_record': playoff_record(rr['record'], ru_reg),

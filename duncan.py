@@ -224,6 +224,96 @@ def _apply_margin_transform(margin, transform, cap):
     raise ValueError(f"Unknown MARGIN_TRANSFORM: {transform}")
 
 
+def _solve_wls_od(window_df, hca, weighting_mode, hca_off_share=0.5):
+    """
+    Solve for team OFFENSIVE + DEFENSIVE WLS ratings.
+
+    Each game contributes 2 rows:
+      home_O - visitor_D = home_pts - mu - hca * off_share
+      visitor_O - home_D = visitor_pts - mu + hca * def_share
+
+    Where mu = league mean points / team / game across the window, so O and D
+    are centered on zero. hca_off_share allocates the home-court advantage
+    between offense (h_off) and defense (h_def). 0.5 = 50/50 split.
+
+    Parameter vector layout: [O_1..O_n, D_1..D_n]. Two zero-sum constraint
+    rows pin both vectors. A team's net contribution to point margin is
+    rating_team = O_team + D_team; the home-vs-visitor margin then satisfies
+    margin = (home_rating - visitor_rating) + HCA, matching the single-rating
+    solver's interpretation.
+
+    No half-equation cap on first pass (the single-rating solver's MARGIN_CAP
+    operates on net margin, which has no clean per-side analog). The
+    calibration step downstream re-anchors O + D = Rating exactly, so the
+    main-rating MARGIN_CAP effectively carries through.
+    """
+    teams = sorted(set(window_df["home_team_name"]) | set(window_df["visitor_team_name"]))
+    team_idx = {t: i for i, t in enumerate(teams)}
+    n_teams = len(teams)
+    n_games = len(window_df)
+
+    home_pts    = window_df["home_pts"].to_numpy(dtype=float)
+    visitor_pts = window_df["visitor_pts"].to_numpy(dtype=float)
+    weights     = window_df["date_weight"].to_numpy(dtype=float)
+    home_names    = window_df["home_team_name"].to_numpy()
+    visitor_names = window_df["visitor_team_name"].to_numpy()
+
+    mu = (home_pts.sum() + visitor_pts.sum()) / (2 * n_games)
+    h_off_share = float(hca_off_share)
+    h_def_share = 1.0 - h_off_share
+
+    # 2 rows per game + 2 zero-sum constraint rows
+    X = np.zeros((2 * n_games + 2, 2 * n_teams))
+    y = np.zeros(2 * n_games + 2)
+    w = np.zeros(2 * n_games + 2)
+
+    for i in range(n_games):
+        h_idx = team_idx[home_names[i]]
+        v_idx = team_idx[visitor_names[i]]
+        # home_O - visitor_D = home_pts - mu - hca*h_off_share
+        X[2*i,     h_idx]            = 1.0
+        X[2*i,     n_teams + v_idx]  = -1.0
+        y_home = home_pts[i] - mu - hca * h_off_share
+        # visitor_O - home_D = visitor_pts - mu + hca*h_def_share
+        X[2*i + 1, v_idx]            = 1.0
+        X[2*i + 1, n_teams + h_idx]  = -1.0
+        y_vis  = visitor_pts[i] - mu + hca * h_def_share
+
+        if weighting_mode == "wls":
+            y[2*i]     = y_home
+            y[2*i + 1] = y_vis
+            w[2*i]     = weights[i]
+            w[2*i + 1] = weights[i]
+        elif weighting_mode == "margin_scale":
+            y[2*i]     = y_home * weights[i]
+            y[2*i + 1] = y_vis  * weights[i]
+            w[2*i]     = 1.0
+            w[2*i + 1] = 1.0
+        else:
+            raise ValueError(f"Unknown WEIGHTING_MODE: {weighting_mode}")
+
+    # Zero-sum on O
+    X[-2, :n_teams] = 1.0
+    y[-2] = 0.0
+    w[-2] = 1.0e8
+    # Zero-sum on D
+    X[-1, n_teams:] = 1.0
+    y[-1] = 0.0
+    w[-1] = 1.0e8
+
+    sqrt_w = np.sqrt(w)
+    Xw = X * sqrt_w[:, None]
+    yw = y * sqrt_w
+    sol, *_ = np.linalg.lstsq(Xw, yw, rcond=None)
+
+    out = pd.DataFrame({
+        "name":     teams,
+        "rating_o": sol[:n_teams],
+        "rating_d": sol[n_teams:],
+    })
+    return out
+
+
 def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap):
     """
     Solve for team fakeronjan WLS ratings on a single rolling window.
@@ -366,6 +456,30 @@ def compute_ratings(master_df, existing_ratings_df):
             margin_transform=MARGIN_TRANSFORM,
             margin_cap=MARGIN_CAP,
         )
+        ranked_od = _solve_wls_od(
+            window,
+            hca=HOME_COURT_ADJUSTMENT,
+            weighting_mode=WEIGHTING_MODE,
+        )
+        ranked = ranked.merge(ranked_od, on='name', how='left')
+        # Calibrate so O + D = Rating exactly. Shift each team's (O_raw, D_raw)
+        # by the same per-team delta. Shape of the split (O - D, the offensive
+        # vs defensive lean) is preserved; only the absolute level is anchored
+        # to the main rating. This means the single-rating solver's MARGIN_CAP
+        # — which handles garbage-time blowouts in the main fit — carries
+        # through to O/D too, without needing a separate half-equation cap.
+        #
+        # delta = (Rating - O_raw - D_raw) / 2  per team
+        # O = O_raw + delta;  D = D_raw + delta
+        # => O + D = O_raw + D_raw + 2*delta = Rating
+        # => O - D = O_raw - D_raw (split preserved)
+        # Zero-sum stays intact because sum(delta) = 0 (all three vectors
+        # are zero-sum across the league).
+        delta = (ranked['rating'] - ranked['rating_o'] - ranked['rating_d']) / 2.0
+        ranked['rating_o'] = ranked['rating_o'] + delta
+        ranked['rating_d'] = ranked['rating_d'] + delta
+        ranked['rank_o'] = ranked['rating_o'].rank(ascending=False, method='min').astype(int)
+        ranked['rank_d'] = ranked['rating_d'].rank(ascending=False, method='min').astype(int)
         ranked['ranking_date'] = current_date
         ranked['ranking_id'] = i
         ranked['season'] = season
@@ -589,13 +703,19 @@ def assemble_final(master_df, ratings_df, standings_df):
         _, _, runner_up = hist[-1]
         return champion, runner_up
 
+    # Best-of-7 clinch threshold. Any team that has reached 4 H2H wins in
+    # a playoff matchup has won the series; until then the matchup is in
+    # progress and the bracket walk must skip it (otherwise a 1-0 Finals
+    # G1 looks "decided" and the latest game's winner gets crowned).
+    _SERIES_CLINCH_WINS = 4
+
     def _process_series(series_df, a, b, team_history):
         a_wins = (((series_df['home_team_name'] == a) & (series_df['home_win'] == 1)) |
                   ((series_df['visitor_team_name'] == a) & (series_df['home_win'] == 0))).sum()
         b_wins = len(series_df) - a_wins
-        if a_wins > b_wins:
+        if a_wins >= _SERIES_CLINCH_WINS and a_wins > b_wins:
             winner, loser = a, b
-        elif b_wins > a_wins:
+        elif b_wins >= _SERIES_CLINCH_WINS and b_wins > a_wins:
             winner, loser = b, a
         else:
             return
@@ -722,6 +842,7 @@ def assemble_final(master_df, ratings_df, standings_df):
 
     final_df = final_df[[
         'ranking_id', 'date', 'season', 'name', 'rating', 'rank',
+        'rating_o', 'rank_o', 'rating_d', 'rank_d',
         'record', 'current_date', 'season_flag', 'name_season',
         'champ', 'runnerup', 'finals_status',
         'cup_champ', 'cup_runnerup', 'cup_status',

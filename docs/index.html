@@ -161,6 +161,25 @@
     font-variant-numeric: tabular-nums;
     color: #1a6b8a;
   }
+  /* Stacked OFF / DEF cells: value above, rank below. Used on Standings,
+     Team Summary, and Champions tables. */
+  .od-val {
+    line-height: 1.15;
+    font-variant-numeric: tabular-nums;
+  }
+  .od-rank {
+    line-height: 1.15;
+    color: #888;
+    font-weight: 500;
+    font-size: 0.78em;
+    font-variant-numeric: tabular-nums;
+    margin-top: 1px;
+  }
+  td.od-cell, th.col-od {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
   .rating-bar-wrap {
     display: flex;
     align-items: center;
@@ -411,7 +430,7 @@
 <header>
   <h1>DUNCAN ♂️🏀</h1>
   <p class="subtitle">NBA Power Rankings</p>
-  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate point-spread vs avg team. ~3 = contender; ~6+ = elite; ~10+ = generational (1995-96 Bulls = 13.07).</p>
+  <p class="model-note">Considers strength of opponent, margin of result, and recency. Reads as approximate point-spread vs avg team. Offense and Defense break Rating into how much each side of the ball contributes (they sum to Rating). ~3 = contender; ~6+ = elite; ~10+ = generational (1995-96 Bulls = 13.07).</p>
   <p class="updated"><span class="cadence-inline">🔄 Updated daily</span> <span class="cadence-sep">|</span> <span id="last-updated">Loading...</span> <span class="cadence-sep">|</span> <span id="last-refreshed">Loading...</span></p>
 </header>
 
@@ -758,6 +777,15 @@ document.querySelectorAll('nav button').forEach(btn => {
 });
 
 // ── Standings ────────────────────────────────────────────────────────────────
+// Stacked Offense/Defense cell formatter: rating value above, dim rank
+// below. Used on Standings / Team Summary / Champions tables.
+function fmtOD(rating, rank) {
+  if (rating == null) return '-';
+  const r = rating.toFixed(2);
+  if (rank == null) return r;
+  return `<div class="od-val">${r}</div><div class="od-rank">${rank}</div>`;
+}
+
 function fmtDate(ds) {
   const d = new Date(ds + 'T00:00:00');
   return d.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'});
@@ -856,6 +884,8 @@ function renderStandings() {
       <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(t.regular_record, t.playoff_record, t.record)}</td>
       <td>${ratingBar(t.rating)}</td>
+      <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_o, t.rank_o)}</td>
+      <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_d, t.rank_d)}</td>
       <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
       <td class="col-hide-mobile" style="text-align:center">${finishBadge(t.finals_status, t.cup_status)}</td>
@@ -871,6 +901,8 @@ function renderStandings() {
         <th>Rank</th><th>Team</th>
         <th class="col-hide-mobile">Conf</th>
         <th>W-L (Pct)</th><th>Rating</th>
+        <th class="col-hide-mobile col-od">OFF</th>
+        <th class="col-hide-mobile col-od">DEF</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
         <th class="col-hide-mobile">Honors</th>
@@ -1024,6 +1056,8 @@ function renderTeamTable() {
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record, g.record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating)}</td>
+    <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_o, g.rank_o)}</td>
+    <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_d, g.rank_d)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${confBadge(g.conference || data.conference, g.finals_status)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(g.finals_status, g.cup_status)}</td>
   </tr>`;
@@ -1034,6 +1068,8 @@ function renderTeamTable() {
       <thead><tr>
         <th>Date</th><th style="text-align:center">Season</th><th>Last Game</th>
         <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
+        <th class="col-hide-mobile col-od">OFF</th>
+        <th class="col-hide-mobile col-od">DEF</th>
         <th class="col-hide-mobile">Conf</th>
         <th class="col-hide-mobile">Honors</th>
       </tr></thead>
@@ -1173,6 +1209,8 @@ function renderChampions() {
       ${teamTd}
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
       <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
+      <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_o, t.rank_o)}</td>
+      <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_d, t.rank_d)}</td>
       <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>`;
   }
 
@@ -1193,11 +1231,15 @@ function renderChampions() {
         <th class="col-champ">Champion</th>
         <th class="col-champ col-hide-mobile">Rank</th>
         <th class="col-champ">Rating</th>
+        <th class="col-champ col-hide-mobile col-od">OFF</th>
+        <th class="col-champ col-hide-mobile col-od">DEF</th>
         <th class="col-champ col-hide-mobile">W-L</th>
         <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
         <th class="col-ru">Runner-Up</th>
         <th class="col-ru col-hide-mobile">Rank</th>
         <th class="col-ru">Rating</th>
+        <th class="col-ru col-hide-mobile col-od">OFF</th>
+        <th class="col-ru col-hide-mobile col-od">DEF</th>
         <th class="col-ru col-hide-mobile">W-L</th>
       </tr></thead>
       <tbody>${rows}</tbody>
