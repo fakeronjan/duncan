@@ -363,12 +363,15 @@ SHORT_SEASONS = {
 completed_seasons = set(df.loc[df['season_flag'] == 2, 'season'].astype(int).unique())
 
 
-def build_goat(flag, require_finalist):
+def build_goat(flag, require_finalist, sort_col='rating'):
     rows = df[(df['season_flag'] == flag) &
               (df['season'].astype(int).isin(completed_seasons))].copy()
     if require_finalist:
         rows = rows[rows['finals_status'].fillna(0) >= 1]
-    rows = rows.sort_values('rating', ascending=False).head(50).reset_index(drop=True)
+    # Drop any rows missing the sort column (older snapshots that pre-date
+    # the O/D port wouldn't have rating_o/rating_d populated).
+    rows = rows[rows[sort_col].notna()]
+    rows = rows.sort_values(sort_col, ascending=False).head(50).reset_index(drop=True)
     out = []
     for i, (_, r) in enumerate(rows.iterrows()):
         s = int(r['season'])
@@ -395,13 +398,21 @@ def build_goat(flag, require_finalist):
     return out
 
 
-goat_rs = build_goat(flag=1, require_finalist=False)
-goat_ps = build_goat(flag=2, require_finalist=True)
-
-with open('docs/data/goat_rs.json', 'w') as f:
-    json.dump(goat_rs, f, separators=(',', ':'))
-with open('docs/data/goat_ps.json', 'w') as f:
-    json.dump(goat_ps, f, separators=(',', ':'))
+# Six GOAT files: {Rating, Offense, Defense} × {RS-end, PS-end}. The
+# PS-end variants are restricted to Finals participants so the list shows
+# actual championship contenders, not playoff flameouts. Mirrors DILLON.
+goat_files = [
+    ('goat_rs.json',   1, False, 'rating'),
+    ('goat_ps.json',   2, True,  'rating'),
+    ('goat_rs_o.json', 1, False, 'rating_o'),
+    ('goat_rs_d.json', 1, False, 'rating_d'),
+    ('goat_ps_o.json', 2, True,  'rating_o'),
+    ('goat_ps_d.json', 2, True,  'rating_d'),
+]
+for fname, flag, require_finalist, sort_col in goat_files:
+    payload = build_goat(flag=flag, require_finalist=require_finalist, sort_col=sort_col)
+    with open(f'docs/data/{fname}', 'w') as f:
+        json.dump(payload, f, separators=(',', ':'))
 
 # ── 3. Per-team JSON files ───────────────────────────────────────────────────
 print("Writing per-team JSON files...")

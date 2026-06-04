@@ -497,6 +497,10 @@
       <button data-rank="worst-champs">Worst champs</button>
       <button data-rank="best-losers">Best losers</button>
       <button data-rank="worst-losers">Worst losers</button>
+      <button data-rank="best-off-champs">Best Off champs</button>
+      <button data-rank="worst-off-champs">Worst Off champs</button>
+      <button data-rank="best-def-champs">Best Def champs</button>
+      <button data-rank="worst-def-champs">Worst Def champs</button>
       <button data-rank="best-matchup">Best matchup</button>
       <button data-rank="worst-matchup">Worst matchup</button>
       <button data-rank="closest">Closest predicted</button>
@@ -514,6 +518,7 @@
 <div id="goat" class="tab">
   <p class="data-note">Top 50 single-season ratings · Switch between end of regular season (all teams) and end of playoffs (NBA Finals participants only).</p>
   <div class="conf-pills" id="goat-mode-pills"></div>
+  <div class="conf-pills" id="goat-metric-pills"></div>
   <div class="conf-pills" id="goat-conf-pills"></div>
   <div id="goat-table-wrap"><p class="loading">Loading GOAT table...</p></div>
   <div class="disrupted-note disrupted-note-bottom" id="goat-disrupted-note" style="display:none"></div>
@@ -525,7 +530,12 @@ let currentSeasonData = null;
 let currentSnapshot   = null;
 let goatDataRS        = null;
 let goatDataPS        = null;
+let goatDataRSO       = null;  // Offense, RS-end
+let goatDataRSD       = null;  // Defense, RS-end
+let goatDataPSO       = null;  // Offense, PS-end
+let goatDataPSD       = null;  // Defense, PS-end
 let goatMode          = 'ps';  // 'ps' (end of playoffs — championship contenders) or 'rs' (end of regular season)
+let goatMetric        = 'rating';  // 'rating' (overall), 'o' (Offense only), 'd' (Defense only)
 let teamsIndex        = null;
 let teamCache         = {};
 let nameToSlug        = {};  // canonical + historical name → slug, built from teamsIndex
@@ -1256,6 +1266,8 @@ function renderChampions() {
 // since that's the canonical measure of how strong the team ultimately was.
 
 const PRE_FINALS_MODES = new Set(['best-matchup', 'worst-matchup', 'closest', 'blowout', 'upset']);
+const OFF_MODES        = new Set(['best-off-champs', 'worst-off-champs']);
+const DEF_MODES        = new Set(['best-def-champs', 'worst-def-champs']);
 
 function preFinalsView(team) {
   return {
@@ -1265,6 +1277,9 @@ function preFinalsView(team) {
     playoff_record: team.playoff_record_pre,
   };
 }
+
+function offView(team) { return { ...team, rating: team.rating_o, rank: team.rank_o }; }
+function defView(team) { return { ...team, rating: team.rating_d, rank: team.rank_d }; }
 
 function fmtSigned(n) { return (n >= 0 ? '+' : '') + n.toFixed(2); }
 
@@ -1312,15 +1327,22 @@ function renderRankings(rankType) {
   if (!championsData) return;
   if (rankType === 'repeat-champs') return renderRepeatChamps();
   if (rankType === 'rematches')     return renderRematches();
-  const entries = (championsData['NBA'] || []).filter(e =>
-    e.champion && e.runner_up &&
-    e.champion.rating != null && e.runner_up.rating != null
-  );
-
+  const isOff       = OFF_MODES.has(rankType);
+  const isDef       = DEF_MODES.has(rankType);
   const isPreFinals = PRE_FINALS_MODES.has(rankType);
+  const entries = (championsData['NBA'] || []).filter(e => {
+    if (!e.champion || !e.runner_up) return false;
+    if (isOff) return e.champion.rating_o != null && e.runner_up.rating_o != null;
+    if (isDef) return e.champion.rating_d != null && e.runner_up.rating_d != null;
+    return e.champion.rating != null && e.runner_up.rating != null;
+  });
+
   const rows = entries.map(e => {
-    const c = isPreFinals ? preFinalsView(e.champion)  : e.champion;
-    const r = isPreFinals ? preFinalsView(e.runner_up) : e.runner_up;
+    let c, r;
+    if (isPreFinals)   { c = preFinalsView(e.champion); r = preFinalsView(e.runner_up); }
+    else if (isOff)    { c = offView(e.champion);       r = offView(e.runner_up); }
+    else if (isDef)    { c = defView(e.champion);       r = defView(e.runner_up); }
+    else               { c = e.champion;                r = e.runner_up; }
     // Matchup quality = max(Rating) + 2 * min(Rating). The 2x weight on the
     // weaker team penalises lopsided matchups — a "great matchup" needs both
     // teams to be strong, not just one elite team padding the combined.
@@ -1358,6 +1380,26 @@ function renderRankings(rankType) {
       sorted = [...rows].sort((a, b) => a.loser.rating - b.loser.rating).slice(0, 10);
       note   = 'Bottom 10 runner-ups by end-of-playoffs rating. The weakest teams ever to lose an NBA Finals.';
       mode   = 'loser-vs-champ';
+      break;
+    case 'best-off-champs':
+      sorted = [...rows].sort((a, b) => b.champ.rating - a.champ.rating).slice(0, 10);
+      note   = 'Top 10 champions by Offense rating. The most explosive offenses ever to win an NBA Finals.';
+      mode   = 'team-vs-opp';
+      break;
+    case 'worst-off-champs':
+      sorted = [...rows].sort((a, b) => a.champ.rating - b.champ.rating).slice(0, 10);
+      note   = 'Bottom 10 champions by Offense rating. The weakest offenses ever to ride a championship defense.';
+      mode   = 'team-vs-opp';
+      break;
+    case 'best-def-champs':
+      sorted = [...rows].sort((a, b) => b.champ.rating - a.champ.rating).slice(0, 10);
+      note   = 'Top 10 champions by Defense rating. The most suffocating defenses ever to win an NBA Finals.';
+      mode   = 'team-vs-opp';
+      break;
+    case 'worst-def-champs':
+      sorted = [...rows].sort((a, b) => a.champ.rating - b.champ.rating).slice(0, 10);
+      note   = 'Bottom 10 champions by Defense rating. The weakest defenses ever to win on the back of an elite offense.';
+      mode   = 'team-vs-opp';
       break;
     case 'best-matchup':
       sorted = [...rows].sort((a, b) => b.quality - a.quality).slice(0, 10);
@@ -1627,12 +1669,20 @@ document.querySelectorAll('#history-rank-pills button').forEach(btn => {
 // ── GOAT Table ────────────────────────────────────────────────────────────────
 async function loadGoat() {
   try {
-    const [r1, r2] = await Promise.all([
+    const [r1, r2, r3, r4, r5, r6] = await Promise.all([
       fetch(`${BASE}/goat_rs.json`),
       fetch(`${BASE}/goat_ps.json`),
+      fetch(`${BASE}/goat_rs_o.json`),
+      fetch(`${BASE}/goat_rs_d.json`),
+      fetch(`${BASE}/goat_ps_o.json`),
+      fetch(`${BASE}/goat_ps_d.json`),
     ]);
-    goatDataRS = await r1.json();
-    goatDataPS = await r2.json();
+    goatDataRS  = await r1.json();
+    goatDataPS  = await r2.json();
+    goatDataRSO = await r3.json();
+    goatDataRSD = await r4.json();
+    goatDataPSO = await r5.json();
+    goatDataPSD = await r6.json();
     renderGoat();
   } catch(e) {
     document.getElementById('goat-table-wrap').innerHTML =
@@ -1640,8 +1690,20 @@ async function loadGoat() {
   }
 }
 
+// Pick (dataset, value-field, header-label) for the current (metric, mode) combo.
+function goatPick() {
+  if (goatMetric === 'o') {
+    return { data: goatMode === 'rs' ? goatDataRSO : goatDataPSO, field: 'rating_o', header: 'Offense' };
+  }
+  if (goatMetric === 'd') {
+    return { data: goatMode === 'rs' ? goatDataRSD : goatDataPSD, field: 'rating_d', header: 'Defense' };
+  }
+  return   { data: goatMode === 'rs' ? goatDataRS  : goatDataPS,  field: 'rating',   header: 'Rating' };
+}
+
 function renderGoat() {
-  const data = goatMode === 'rs' ? goatDataRS : goatDataPS;
+  const pick = goatPick();
+  const data = pick.data;
   if (!data) return;
   const teams = goatConf === 'all'
     ? data
@@ -1654,12 +1716,13 @@ function renderGoat() {
       ? `<td class="team-cell linked" data-team-slug="${slug}" data-season="${t.season}">${label}</td>`
       : `<td class="team-cell">${label}</td>`;
     const shortTag = seasonTag(t.season);
+    const val = t[pick.field];
     return `<tr>
     <td class="rank-cell">${t.rank}</td>
     <td class="season-cell linked" data-season-link="${t.season}" style="white-space:nowrap">${fmtSeason(t.season)}${shortTag}</td>
     ${teamTd}
     <td class="col-hide-mobile">${confBadge(t.conference, t.finals_status)}</td>
-    <td>${ratingBar(t.rating)}</td>
+    <td>${ratingBar(val)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap" class="col-hide-mobile">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(t.finals_status, t.cup_status)}</td>
   </tr>`;
@@ -1672,7 +1735,7 @@ function renderGoat() {
         <th style="text-align:center">Season</th>
         <th>Team</th>
         <th class="col-hide-mobile">Conf</th>
-        <th>Rating</th>
+        <th>${pick.header}</th>
         <th class="col-hide-mobile">W-L</th>
         <th class="col-hide-mobile">Honors</th>
       </tr></thead>
@@ -1685,6 +1748,11 @@ function renderGoat() {
 buildConfPills('standings-conf-pills', standingsConf, v => { standingsConf = v; renderStandings(); });
 buildConfPills('ts-conf-pills',        tsConf,        v => { tsConf = v; populateTeamSelect(); });
 buildConfPills('goat-conf-pills',      goatConf,      v => { goatConf = v; renderGoat(); });
+buildConfPills('goat-metric-pills',    goatMetric,    v => { goatMetric = v; renderGoat(); }, [
+  { value: 'rating', label: 'Rating (overall)' },
+  { value: 'o',      label: 'Offense only' },
+  { value: 'd',      label: 'Defense only' },
+]);
 buildConfPills('goat-mode-pills',      goatMode,      v => { goatMode = v; renderGoat(); }, [
   { value: 'rs', label: 'End of regular season' },
   { value: 'ps', label: 'End of playoffs' },
