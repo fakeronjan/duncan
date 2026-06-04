@@ -796,6 +796,18 @@ function fmtOD(rating, rank) {
   return `<div class="od-val">${r}</div><div class="od-rank">${rank}</div>`;
 }
 
+// Title Odds: percentage with optional rank stacked below (matches the
+// OFF/DEF columns visually). 0% (eliminated) and rounds-to-0.0% render
+// as '-'; 100% drops the decimal.
+function fmtTitleOdds(odds, rank) {
+  if (odds == null) return '-';
+  const displayed = (odds * 100).toFixed(1);
+  if (displayed === '0.0') return '-';
+  const value = parseFloat(displayed) >= 100 ? '100%' : `${displayed}%`;
+  if (rank == null) return value;
+  return `<div class="od-val">${value}</div><div class="od-rank">${rank}</div>`;
+}
+
 function fmtDate(ds) {
   const d = new Date(ds + 'T00:00:00');
   return d.toLocaleDateString('en-US', {month: 'numeric', day: 'numeric', year: 'numeric'});
@@ -896,6 +908,7 @@ function renderStandings() {
       <td>${ratingBar(t.rating)}</td>
       <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_o, t.rank_o)}</td>
       <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_d, t.rank_d)}</td>
+      <td class="rating-cell od-cell col-hide-mobile">${fmtTitleOdds(t.title_odds, t.title_odds_rank)}</td>
       <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
       <td class="col-hide-mobile" style="text-align:center">${finishBadge(t.finals_status, t.cup_status)}</td>
@@ -913,6 +926,7 @@ function renderStandings() {
         <th>W-L (Pct)</th><th>Rating</th>
         <th class="col-hide-mobile col-od">OFF</th>
         <th class="col-hide-mobile col-od">DEF</th>
+        <th class="col-hide-mobile col-od" title="Probability of winning the NBA Finals, given (Rating, Offense, Defense, season progress) at this snapshot. Trained on every other season's snapshots (leave-one-out, modern era only). League-wide probabilities sum to 100%.">Title Odds</th>
         <th>Last Game</th>
         <th class="col-hide-mobile">Date</th>
         <th class="col-hide-mobile">Honors</th>
@@ -1068,6 +1082,7 @@ function renderTeamTable() {
     <td>${ratingBar(g.rating)}</td>
     <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_o, g.rank_o)}</td>
     <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_d, g.rank_d)}</td>
+    <td class="rating-cell od-cell col-hide-mobile">${fmtTitleOdds(g.title_odds, g.title_odds_rank)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${confBadge(g.conference || data.conference, g.finals_status)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${finishBadge(g.finals_status, g.cup_status)}</td>
   </tr>`;
@@ -1080,6 +1095,7 @@ function renderTeamTable() {
         <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
         <th class="col-hide-mobile col-od">OFF</th>
         <th class="col-hide-mobile col-od">DEF</th>
+        <th class="col-hide-mobile col-od" title="Probability of winning the NBA Finals, given (Rating, Offense, Defense, season progress) at this snapshot. Trained on every other season's snapshots (leave-one-out, modern era only). League-wide probabilities sum to 100%.">Title Odds</th>
         <th class="col-hide-mobile">Conf</th>
         <th class="col-hide-mobile">Honors</th>
       </tr></thead>
