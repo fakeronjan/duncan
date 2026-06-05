@@ -317,8 +317,9 @@ PHASE_R2_ENTRY_TO      = 0.70
 PHASE_CF_ENTRY_TO      = 0.85
 PHASE_FINALS_ENTRY_TO  = 0.95
 PHASE_CHAMPION_TO      = 1.00
-TITLE_TRAIN_FROM_SEASON = 2004
-TITLE_TRAIN_TO_SEASON   = 2025  # extends as new completed seasons land
+TITLE_TRAIN_FROM_SEASON = 2004  # no upper bound — every newly-completed
+                                # season auto-joins the training pool on the
+                                # next cron run, mirroring DILLON's pattern.
 
 # RS-end dates per season (mode-of-threshold game per team, +/- 2 days)
 REGULAR_SEASON_GAMES_TO = {1999: 50, 2012: 66, 2020: 72, 2021: 72}
@@ -521,8 +522,7 @@ def _to_predict_logistic(X, beta):
 # LOO across modern seasons (2004+ with known champion). For in-progress
 # current seasons, predict with full-history-trained model.
 _eligible = _to_train_df[
-    (_to_train_df['season'] >= TITLE_TRAIN_FROM_SEASON) &
-    (_to_train_df['season'] <= TITLE_TRAIN_TO_SEASON)
+    _to_train_df['season'] >= TITLE_TRAIN_FROM_SEASON
 ].copy()
 _completed_seasons = {s for s in _eligible['season'].unique() if s in _to_champion}
 
