@@ -134,7 +134,19 @@ def scrape_games(min_season, max_season, existing_df):
 
     combined = pd.concat([existing_df] + new_frames, axis=0, sort=False).reset_index(drop=True)
     combined.sort_values('season', inplace=True)
-    combined.drop_duplicates(keep="first", inplace=True)
+    # Dedup by game-identity (date + teams), preferring the row with a
+    # completed-game score over the scheduled-placeholder row. Each cron run
+    # re-scrapes the in-progress season; basketball-reference returns a
+    # placeholder row (NaN pts) for upcoming games and the same row gets
+    # filled in when the game completes. The plain drop_duplicates(keep=first)
+    # didn't catch this because the placeholder and completed rows DIFFER on
+    # pts / attendance / box_score_text. Without this guard the title-odds
+    # walker double-counts wins (saw 2-0 Finals read as 4-0 sweep, 2026-06-06).
+    combined['_sort_pts'] = pd.to_numeric(combined['home_pts'], errors='coerce')
+    combined = combined.sort_values('_sort_pts', na_position='first', kind='mergesort')
+    combined = combined.drop_duplicates(
+        subset=['date_game', 'home_team_name', 'visitor_team_name'], keep='last'
+    ).drop(columns='_sort_pts').sort_values('season').reset_index(drop=True)
     combined.to_csv('loaded_nba_games.csv', index=False)
     return combined
 

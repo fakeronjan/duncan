@@ -321,6 +321,14 @@ TITLE_TRAIN_FROM_SEASON = 2004  # no upper bound - every newly-completed
                                 # season auto-joins the training pool on the
                                 # next cron run, mirroring DILLON's pattern.
 
+# Seasons with NBA Play-In Tournament. 2020 was the bubble's 1-game
+# play-in for the 8 seed; 2021+ is the formal 4-team tournament (7v8 and
+# 9v10, then loser-of-7v8 vs winner-of-9v10 for the 8 seed). All play-in
+# matchups are BO1 - a single game. Used by the bracket walker below to
+# distinguish a real series (BO5 / BO7) from a play-in matchup. Add the
+# new season here when it becomes an in-progress season.
+PLAY_IN_SEASONS = {2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027}
+
 # RS-end dates per season (mode-of-threshold game per team, +/- 2 days)
 REGULAR_SEASON_GAMES_TO = {1999: 50, 2012: 66, 2020: 72, 2021: 72}
 games_to = games.copy()
@@ -404,16 +412,19 @@ for s, sg_all in games_to.groupby('season'):
     pg['_m'] = pg.apply(lambda r: tuple(sorted([r['home_team_name'], r['visitor_team_name']])), axis=1)
     history = {}
     series_state = {}   # team -> [(date, series_wins, series_losses), ...]
-    # "Real bracket" = teams that played in at least one matchup with 3+
-    # games. This filters out NBA play-in matchups (BO1, 1 game per pair)
-    # so a play-in casualty like a 9/10 seed who lost their single play-in
-    # game isn't treated as "in the playoff field" by the model.
+    # "Real bracket" = teams in actual playoff series (BO5 / BO7), as
+    # opposed to play-in tournament matchups (BO1). The old filter used
+    # `len(mg) < 3` as a proxy for "play-in," but that also swept up
+    # in-progress real series at games 1-2 (cost us the 2026 Knicks-Spurs
+    # 2-0 Finals read). Switched to an explicit play-in-season check:
+    # skip exactly the 1-game matchups in seasons that have a play-in
+    # tournament, leave 2-game in-progress series alone.
     real_field = set()
     last_post_rs_date_for_team = {}  # used as elim fallback for play-in losers
     for matchup, mg in pg.groupby('_m'):
         a, b = matchup
-        if len(mg) < 3:
-            continue  # play-in matchup, skip entirely (no series state to record)
+        if s in PLAY_IN_SEASONS and len(mg) == 1:
+            continue  # play-in matchup (BO1), not a real series
         mg_s = mg.sort_values('date_game').reset_index(drop=True)
         cur = [0]
         for i in range(1, len(mg_s)):
