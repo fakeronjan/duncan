@@ -78,7 +78,7 @@ This was the most interesting cut. Rather than asking "did DUNCAN call the sprea
 
 **DUNCAN essentially matches Vegas at predicting series winners.**
 
-When the two methods agreed (63 series), they were right 71.4% of the time. When they disagreed (21 series), DUNCAN's pick won 47.6%, Vegas's pick won 52.4% — a wash. Neither has a real edge over the other when they see the matchup differently.
+When the two methods agreed (63 series), they were right 71.4% of the time. When they disagreed (21 series), DUNCAN's pick won 47.6%, Vegas's pick won 52.4% - a wash. Neither has a real edge over the other when they see the matchup differently.
 
 ### Where DUNCAN's confidence translates to accuracy
 

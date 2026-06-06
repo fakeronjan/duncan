@@ -101,7 +101,7 @@ def _proc_subseries(sub_df, a, b, history, series_state):
         else:     b_w += 1
         series_state.setdefault(a, []).append((g['date_game'], a_w, b_w))
         series_state.setdefault(b, []).append((g['date_game'], b_w, a_w))
-    # Determine series winner — era-aware threshold
+    # Determine series winner - era-aware threshold
     s_int = int(sub_sorted['season'].iloc[0])
     if   s_int >= 2003: clinch = 4
     elif s_int >= 1984: clinch = 3
@@ -199,7 +199,7 @@ def current_series_state(s, team, snap_date):
     if not ev:
         return 0, 0
     # Find latest event with date <= snap_date AND within last 30 days
-    # (30-day cutoff handles "between rounds" — once a new round starts the
+    # (30-day cutoff handles "between rounds" - once a new round starts the
     # team gets fresh events).
     candidates = [(d, w, l) for (d, w, l) in ev if d <= snap_date]
     if not candidates:
@@ -208,7 +208,7 @@ def current_series_state(s, team, snap_date):
     # If this event is from a previous round (resolved series), team has
     # advanced and is between rounds → (0, 0). Detect by checking if there's
     # a clinch (entry in season_team_clinches) before snap_date whose date
-    # is between event date and snap_date — but actually simpler: if the
+    # is between event date and snap_date - but actually simpler: if the
     # last event is more than 14 days before snap_date, the series likely
     # ended and team is between rounds.
     days_since = (snap_date - last_d).days
@@ -352,7 +352,7 @@ for lo, hi in zip(bins[:-1], bins[1:]):
 
 print()
 print("="*60)
-print("SPOT CHECKS — 2016 Finals (Warriors vs Cavaliers)")
+print("SPOT CHECKS - 2016 Finals (Warriors vs Cavaliers)")
 print("Cavs came back from 1-3 down to win 4-3.")
 print("="*60)
 fin_dates = ['2016-06-02','2016-06-05','2016-06-08','2016-06-10','2016-06-13','2016-06-16','2016-06-19']

@@ -22,7 +22,7 @@ import pandas as pd
 from scipy.optimize import minimize
 from datetime import datetime
 
-GAMES_PER_RS = 82  # We treat short / lockout / bubble seasons as 82 too —
+GAMES_PER_RS = 82  # We treat short / lockout / bubble seasons as 82 too -
                    # season_progress saturates if a team played fewer games.
 
 # Phase weights: alive team's CURRENT progress value
@@ -88,7 +88,7 @@ for s, sg in games.groupby('season'):
     rs_end_by_season[int(s)] = in_window.max()
 
 # ── 3. Bracket walk: per (season, team) list of series clinches ───────────────
-# Re-uses the same per-series clinch threshold (4 H2H wins, BO7) — historical
+# Re-uses the same per-series clinch threshold (4 H2H wins, BO7) - historical
 # pre-1984 BO3 / 1984-2002 BO5 first-round series go unrecorded by this rule
 # but the CHAMPION's path is BO7 in every era post-1976, so we still capture
 # their series wins correctly. For non-champions, we may under-count R1
@@ -210,7 +210,7 @@ for _, r in ratings.iterrows():
         series_won = sum(1 for (d, w, _) in clinches if d <= sd and w)
         # Determine alive status
         if elim is not None and sd >= elim:
-            continue  # eliminated before this snapshot — skip
+            continue  # eliminated before this snapshot - skip
         # Map series_won to progress
         if series_won == 0:
             progress = PHASE_POST_RS
@@ -301,7 +301,7 @@ def spot_check(preds, season, team, label):
     sub = preds[(preds['season'] == season) & (preds['team'] == team)].sort_values('date')
     if sub.empty:
         return
-    print(f"\n  {label} — {team} {season}:")
+    print(f"\n  {label} - {team} {season}:")
     # Bin by progress level
     milestones = []
     for prog in [0.05, 0.20, 0.40, 0.50, 0.55, 0.70, 0.85, 0.95, 1.00]:

@@ -2,7 +2,7 @@ name: Update DUNCAN Ratings
 
 on:
   schedule:
-    - cron: '13 15 * * *'   # 15:13 UTC daily — leads US-sport block; basketball-reference (sports-reference family, rate-limited)
+    - cron: '13 15 * * *'   # 15:13 UTC daily - leads US-sport block; basketball-reference (sports-reference family, rate-limited)
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
 permissions:

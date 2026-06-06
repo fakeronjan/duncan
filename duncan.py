@@ -49,7 +49,7 @@ REGULAR_SEASON_GAMES = {
 }
 
 # Emirates NBA Cup championship games. The NBA does NOT count this game in
-# the regular-season W-L record for either participant — both finalists
+# the regular-season W-L record for either participant - both finalists
 # play 82 RS games on top of this one. The data still includes the game
 # (it's a real on-court signal for ratings) but standings exclude it.
 # Season uses the calendar year of the Finals (2024 = the 2023-24 season).
@@ -72,7 +72,7 @@ NBA_CUP_FINAL_DATES = {
 # rebranded Bobcats franchise, which the NBA officially credits with the
 # 1989-2002 Hornets history. Our source data already merges those two
 # eras under "Charlotte Hornets" (same LA-Rams-style quirk we accepted
-# earlier) — we just consolidate Bobcats on top of that.
+# earlier) - we just consolidate Bobcats on top of that.
 TEAM_ALIASES = {
     'Washington Bullets':                'Washington Wizards',
     'Charlotte Bobcats':                  'Charlotte Hornets',
@@ -130,7 +130,7 @@ def scrape_games(min_season, max_season, existing_df):
             url = f'https://www.basketball-reference.com/leagues/NBA_{year}_games-{month}.html'
             df = scrape_table(url, year)
             new_frames.append(df)
-        print(f"{year} — scraped!")
+        print(f"{year} - scraped!")
 
     combined = pd.concat([existing_df] + new_frames, axis=0, sort=False).reset_index(drop=True)
     combined.sort_values('season', inplace=True)
@@ -205,7 +205,7 @@ def prepare_game_data(raw_df):
 
 
 # =========================================================
-# FAKERONJAN WLS RATINGS — homebrew weighted least squares solver
+# FAKERONJAN WLS RATINGS - homebrew weighted least squares solver
 # =========================================================
 
 def _apply_margin_transform(margin, transform, cap):
@@ -466,7 +466,7 @@ def compute_ratings(master_df, existing_ratings_df):
         # by the same per-team delta. Shape of the split (O - D, the offensive
         # vs defensive lean) is preserved; only the absolute level is anchored
         # to the main rating. This means the single-rating solver's MARGIN_CAP
-        # — which handles garbage-time blowouts in the main fit — carries
+        # - which handles garbage-time blowouts in the main fit - carries
         # through to O/D too, without needing a separate half-equation cap.
         #
         # delta = (Rating - O_raw - D_raw) / 2  per team
@@ -514,7 +514,7 @@ def compute_standings(master_df, existing_standings_df):
     Compute cumulative season standings for each day in master_df.
     Skips dates already present in existing_standings_df.
     """
-    # NBA Cup championship games don't count in regular-season W-L by NBA rule —
+    # NBA Cup championship games don't count in regular-season W-L by NBA rule -
     # exclude them from the games counted for standings (still in the rating data).
     cols_needed = ['season', 'date_game', 'grouped_date_id', 'visitor_team_name', 'visitor_win', 'home_team_name', 'home_win']
     if 'is_nba_cup_final' in master_df.columns:
@@ -631,7 +631,7 @@ def _get_regular_season_end_date(master_df, season):
 
 def assemble_final(master_df, ratings_df, standings_df):
     """Merge ratings and standings, add flags and last-game context."""
-    print("Final step — merging DUNCAN ratings and standings...")
+    print("Final step - merging DUNCAN ratings and standings...")
 
     final_df = pd.merge(ratings_df, standings_df, how='left', on=['ranking_id', 'name'])
     final_df.rename(columns={'ranking_date_x': 'date', 'season_x': 'season'}, inplace=True)
@@ -656,7 +656,7 @@ def assemble_final(master_df, ratings_df, standings_df):
     # skipped. A team is "still in" if their LATEST matchup was a win
     # (handles 8-seed play-in arc: lost 7-vs-8 then won Game 3 -> still in).
     # When exactly one team is still in, they're the champion, and their
-    # latest opponent is the runner-up. No date cushion — the structure of
+    # latest opponent is the runner-up. No date cushion - the structure of
     # the bracket distinguishes CF clinch (2 teams still in) from Finals
     # clinch (1 team still in).
     def detect_finals_champion(season_games, rs_end_date):
@@ -737,7 +737,7 @@ def assemble_final(master_df, ratings_df, standings_df):
         return season in _finals_results
 
     # Regular season is "done" once any team has played the threshold count.
-    # (MIN would break for 2020 bubble — some teams didn't qualify for full schedule.)
+    # (MIN would break for 2020 bubble - some teams didn't qualify for full schedule.)
     regular_season_complete = set()
     for season in final_df['season'].unique():
         sg = master_df[master_df['season'] == season]
@@ -750,7 +750,7 @@ def assemble_final(master_df, ratings_df, standings_df):
         if all_g.groupby('team').size().max() >= threshold:
             regular_season_complete.add(season)
 
-    # Last day of postseason — only for seasons where Finals are fully done
+    # Last day of postseason - only for seasons where Finals are fully done
     season_max_id = final_df.groupby('season')['ranking_id'].transform('max')
     is_completed = final_df['season'].apply(season_is_fully_complete)
     final_df['season_flag'] = np.where(
@@ -759,7 +759,7 @@ def assemble_final(master_df, ratings_df, standings_df):
         0
     )
 
-    # Last day of regular season — only for seasons where regular season has actually ended
+    # Last day of regular season - only for seasons where regular season has actually ended
     for season in final_df['season'].unique():
         if season not in regular_season_complete:
             continue

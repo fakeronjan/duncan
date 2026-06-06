@@ -1,5 +1,5 @@
 """
-Title-odds v3: replace raw (series_w, series_l) with a single feature —
+Title-odds v3: replace raw (series_w, series_l) with a single feature -
 log-odds of winning the current series under a coin-flip BO7 with era-
 aware padding (BO5 → +1 to both sides, BO3 → +2 to both sides).
 
@@ -58,7 +58,7 @@ def series_p_padded(w, l, clinch_threshold):
     w_p, l_p = min(w + pad, 4), min(l + pad, 4)
     if (w_p, l_p) in BO7_P:
         return BO7_P[(w_p, l_p)]
-    # Out of grid (clinched) — clamp
+    # Out of grid (clinched) - clamp
     return 1.0 if w_p >= 4 else 0.0
 
 
@@ -343,7 +343,7 @@ for total in range(7):
 
 print()
 print("=" * 70)
-print("SPOT CHECKS — 2016 Finals (Cavs came back from 1-3)")
+print("SPOT CHECKS - 2016 Finals (Cavs came back from 1-3)")
 print("=" * 70)
 fin_dates = ['2016-06-02','2016-06-05','2016-06-08','2016-06-10','2016-06-13','2016-06-16','2016-06-19']
 for dt_str in fin_dates:

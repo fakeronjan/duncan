@@ -283,7 +283,7 @@
   /* League History table */
   .col-champ  { background: #fffdf3; }
   .col-ru     { background: #fafafa; }
-  /* Lists sub-view highlights — sort-key column gets a yellow tint so the
+  /* Lists sub-view highlights - sort-key column gets a yellow tint so the
      viewer's eye lands on the metric being ranked. row-group-end draws
      the divider line between repeat-champ / rematch pairs. */
   .sort-col              { background: #fff8d0 !important; }
@@ -313,7 +313,7 @@
     .col-hide-mobile { display: none; }
   }
 
-  /* Fleet nav strip — links to sister sites in the fakeronjan sports ratings family */
+  /* Fleet nav strip - links to sister sites in the fakeronjan sports ratings family */
   .fleet-nav {
     background: #0e4a5f;
     display: flex;
@@ -541,7 +541,7 @@ let goatDataRSO       = null;  // Offense, RS-end
 let goatDataRSD       = null;  // Defense, RS-end
 let goatDataPSO       = null;  // Offense, PS-end
 let goatDataPSD       = null;  // Defense, PS-end
-let goatMode          = 'ps';  // 'ps' (end of playoffs — championship contenders) or 'rs' (end of regular season)
+let goatMode          = 'ps';  // 'ps' (end of playoffs - championship contenders) or 'rs' (end of regular season)
 let goatMetric        = 'rating';  // 'rating' (overall), 'o' (Offense only), 'd' (Defense only)
 let teamsIndex        = null;
 let teamCache         = {};
@@ -873,7 +873,7 @@ async function loadSeason(season) {
     // Show warm-up note for 1980 (the first season; first 100 game-days are warm-up)
     document.getElementById('warmup-note').style.display =
       (parseInt(season) === 1980) ? 'block' : 'none';
-    // Disrupted-season note (Standings is single-season — based on selection)
+    // Disrupted-season note (Standings is single-season - based on selection)
     updateDisruptedNote('standings-disrupted-note', [season]);
   } catch(e) {
     document.getElementById('standings-table-wrap').innerHTML =
@@ -1067,7 +1067,7 @@ function renderTeamTable() {
   const tableRows = [...rows].reverse().map(g => {
     const era = (g.display_name && g.display_name !== canonical) ? g.display_name : '';
     // In single-season view the top footnote already gives the disruption
-    // context — no need to repeat the badge on every game row.
+    // context - no need to repeat the badge on every game row.
     const seasonCellRaw = (tsView === 'single')
       ? fmtSeason(g.season)
       : `${fmtSeason(g.season)}${seasonTag(g.season)}`;
@@ -1306,14 +1306,14 @@ function defView(team) { return { ...team, rating: team.rating_d, rank: team.ran
 
 function fmtSigned(n) { return (n >= 0 ? '+' : '') + n.toFixed(2); }
 
-// Flip "4-3" to "3-4" — used when the loser is the focal team (left slot)
+// Flip "4-3" to "3-4" - used when the loser is the focal team (left slot)
 // so the series score reads from their POV.
 function flipSeries(s) {
   const m = s && s.match(/^(\d+)-(\d+)$/);
   return m ? `${m[2]}-${m[1]}` : s;
 }
 
-// Lists-specific team block — adds the optional sort-col highlight on the
+// Lists-specific team block - adds the optional sort-col highlight on the
 // Rating cell for team-quality rankings. Mirrors DILLON's rankTeamBlock.
 function rankTeamBlock(t, bg, season, sortReact) {
   if (!t) return `<td class="${bg}" colspan="4">-</td>`;
@@ -1368,7 +1368,7 @@ function renderRankings(rankType) {
     else if (isDef)    { c = defView(e.champion);       r = defView(e.runner_up); }
     else               { c = e.champion;                r = e.runner_up; }
     // Matchup quality = max(Rating) + 2 * min(Rating). The 2x weight on the
-    // weaker team penalises lopsided matchups — a "great matchup" needs both
+    // weaker team penalises lopsided matchups - a "great matchup" needs both
     // teams to be strong, not just one elite team padding the combined.
     const hi = Math.max(c.rating, r.rating);
     const lo = Math.min(c.rating, r.rating);
@@ -1561,7 +1561,7 @@ function renderRepeatChamps() {
   // Detect runs of consecutive seasons with the SAME champion. A run of
   // length N renders as a single N-row block (threepeats = 3 rows, the
   // Celtics 1959-66 streak = 8 rows, etc.). Single-season wins are
-  // skipped — only runs of length 2+ show up here.
+  // skipped - only runs of length 2+ show up here.
   const entries = [...(championsData['NBA'] || [])].sort((a, b) => a.season - b.season);
   const runs = [];
   let current = [];
@@ -1612,7 +1612,7 @@ function renderRepeatChamps() {
 function renderRematches() {
   // Group all NBA Finals between the SAME two teams into a single N-row
   // block. A group's window extends as long as those two teams keep meeting
-  // — once 5 straight seasons pass without them facing each other again,
+  // - once 5 straight seasons pass without them facing each other again,
   // the group closes. So Heat-Mavs 2006 + 2011 stays together (4-yr gap),
   // but Heat-Mavs 2006 + 2012 would split (5-yr gap).
   //

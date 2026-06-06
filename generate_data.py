@@ -1,5 +1,5 @@
 """
-generate_data.py — reads duncan_ratings_with_standings.csv and writes JSON for the DUNCAN web frontend.
+generate_data.py - reads duncan_ratings_with_standings.csv and writes JSON for the DUNCAN web frontend.
 Run after duncan.py. Outputs to docs/data/.
 
 Mirrors the LOBO/ZIDANE site architecture, with NBA-specific tweaks:
@@ -201,7 +201,7 @@ def _od_fields(r):
 
 def _played(result):
     """True iff this row represents an actual game played. Upstream now
-    writes empty strings for non-game-days (was 'No Game' previously) —
+    writes empty strings for non-game-days (was 'No Game' previously) -
     both must be treated as "didn't play" or the forward-fill of last_match
     breaks for any snapshot date a team didn't play on."""
     if result is None or pd.isna(result):
@@ -216,7 +216,7 @@ df['is_game_day'] = df['last_game_result'].apply(_played).astype(int)
 df['is_end_of_season'] = df['season_flag'].isin([1, 2]).astype(int)
 
 # Per-(team, season) forward-filled last game. Keying by season prevents
-# cross-season carry-forward — at the start of a new season, teams that
+# cross-season carry-forward - at the start of a new season, teams that
 # haven't played yet correctly show empty rather than their previous-season
 # Finals result.
 _last_game_history = {}
@@ -245,7 +245,7 @@ def last_game_date_as_of(team, snap_date_str, season):
     return dates[idx] if idx >= 0 else ''
 
 
-# Per-season last regular-season date — used to flag playoff vs regular-season entries
+# Per-season last regular-season date - used to flag playoff vs regular-season entries
 _rs_end_dates = (
     df[df['season_flag'] == 1]
     .groupby('season')['date']
@@ -268,7 +268,7 @@ _reg_record_lookup = {
 }
 
 # End-of-playoffs combined record per (team, season). Used to derive the
-# eventual playoff portion via _parse_record subtraction below — so GOAT
+# eventual playoff portion via _parse_record subtraction below - so GOAT
 # rows show the team's playoff record regardless of which snapshot the row
 # itself comes from (RS-end snapshots wouldn't otherwise know it).
 _full_record_lookup = {
@@ -305,7 +305,7 @@ def playoff_record(full_record, regular_record):
 # post-CF = 0.95, crowned = 1.0). Eliminated teams hard-set to 0%; alive
 # teams renormalized to sum to 100% per snapshot. Training cutoff at
 # 2004+ (24 modern seasons) gave the best-calibrated predictions in
-# evaluation — pre-2004 dynasty data made the model overconfident on
+# evaluation - pre-2004 dynasty data made the model overconfident on
 # mid-range probabilities.
 print("Computing title odds (logistic regression, leave-one-season-out)...")
 from scipy.optimize import minimize
@@ -317,7 +317,7 @@ PHASE_R2_ENTRY_TO      = 0.70
 PHASE_CF_ENTRY_TO      = 0.85
 PHASE_FINALS_ENTRY_TO  = 0.95
 PHASE_CHAMPION_TO      = 1.00
-TITLE_TRAIN_FROM_SEASON = 2004  # no upper bound — every newly-completed
+TITLE_TRAIN_FROM_SEASON = 2004  # no upper bound - every newly-completed
                                 # season auto-joins the training pool on the
                                 # next cron run, mirroring DILLON's pattern.
 
@@ -436,7 +436,7 @@ for s, sg_all in games_to.groupby('season'):
 
 # Champion per season: the team whose bracket history is all wins, no
 # losses (they advanced through every series they played). Works across
-# eras even though the number of series varies — 4 in modern bracket, 3
+# eras even though the number of series varies - 4 in modern bracket, 3
 # for bye'd top seeds in the pre-1984 12-team format.
 _to_champion = {}
 for (s, team), entries in _to_clinches.items():
@@ -477,7 +477,7 @@ def _to_current_series_state(s, team, snap_date):
 
 def _to_series_padded(w, l, season, series_won):
     """Apply era-aware padding so series state is reported in BO7-equivalent
-    space — BO5 series get +1 wins and +1 losses, BO3 series get +2 each.
+    space - BO5 series get +1 wins and +1 losses, BO3 series get +2 each.
     Only the first round (series_won == 0) needs padding in historical eras;
     all other rounds were BO7. This lets the 2004+-trained model "see" a
     historical R1 BO5 series 3-1 as the equivalent BO7 state 4-2 (sweep
@@ -542,7 +542,7 @@ print(f"  Title-odds training rows: {len(_to_train_df):,} "
 
 def _to_features(d):
     """Title-odds feature matrix. Includes the per-snapshot current-series
-    state (series_w, series_l) — values are era-padded so a BO5 3-1 reads
+    state (series_w, series_l) - values are era-padded so a BO5 3-1 reads
     as BO7 4-2. For non-playoff / between-rounds snapshots, both are 0."""
     p = d['progress'].values
     return np.column_stack([
@@ -615,7 +615,7 @@ if not _in_progress.empty and not _eligible.empty:
 # Pre-2004 historical seasons: also predict with the full-history-trained
 # model so the UI surfaces something coherent on older snapshots, even though
 # they're outside the training cutoff. Predictions there are extrapolations
-# — calibration is not guaranteed.
+# - calibration is not guaranteed.
 _pre_window = _to_train_df[_to_train_df['season'] < TITLE_TRAIN_FROM_SEASON]
 if not _pre_window.empty:
     pre = _pre_window.copy()
@@ -688,18 +688,18 @@ with open('docs/data/current_standings.json', 'w') as f:
 
 # ── 2. GOAT tables (end-of-RS + end-of-playoffs) ─────────────────────────────
 # Two lists, matching the SAKIC/GRIFFEY fleet pattern:
-#   goat_rs.json — top 50 single-season ratings at end of regular season, all teams.
-#   goat_ps.json — top 50 single-season ratings at end of playoffs, Finals participants only.
+#   goat_rs.json - top 50 single-season ratings at end of regular season, all teams.
+#   goat_ps.json - top 50 single-season ratings at end of playoffs, Finals participants only.
 # Both gated to fully-complete seasons (a season is "complete" once a
-# season_flag == 2 row exists for that season — i.e. the Finals have ended).
+# season_flag == 2 row exists for that season - i.e. the Finals have ended).
 print("Writing goat_rs.json + goat_ps.json...")
 
-# Short / disrupted seasons — flagged on GOAT/Standings/Champions/TeamSummary
+# Short / disrupted seasons - flagged on GOAT/Standings/Champions/TeamSummary
 # rows so the UI can tag them inline. Small samples bias ratings; the tag
 # adds context without altering the model. Categories drive UI color:
-#   'cancelled' (red)  — season or major portion never played
-#   'labor'     (amber) — strike or lockout shortened a played season
-#   'covid'     (yellow) — COVID-related disruption
+#   'cancelled' (red)  - season or major portion never played
+#   'labor'     (amber) - strike or lockout shortened a played season
+#   'covid'     (yellow) - COVID-related disruption
 SHORT_SEASONS = {
     1999: {
         'tag': 'lockout 50g',
@@ -899,7 +899,7 @@ seasons_meta = {
     'first_date': str(games['date_game'].min()),  # actual first game (not first rated date)
     'last_date':  str(games['date_game'].max()),
     'generated_at': datetime.now(timezone.utc).isoformat(),
-    # Fleet-wide disrupted-season lookup — SPA references this to render
+    # Fleet-wide disrupted-season lookup - SPA references this to render
     # tags + footnotes consistently across Standings / Team Summary / Champions / GOAT.
     'disrupted_seasons': {
         str(year): {'tag': info['tag'], 'category': info['category'], 'note': info['note']}
@@ -1050,7 +1050,7 @@ for season in sorted(df['season'].unique(), reverse=True):
 
 # Pre-1977 NBA Finals counts (1947-1976), keyed by team name as it appears in our data.
 # Franchises that no longer exist or relocated under different names (e.g. Minneapolis
-# Lakers, Syracuse Nationals, St. Louis Hawks, Fort Wayne Pistons) are NOT carried over —
+# Lakers, Syracuse Nationals, St. Louis Hawks, Fort Wayne Pistons) are NOT carried over -
 # matches the city-name-separate philosophy used elsewhere in the site.
 # The 1977-1979 champions (Blazers, Bullets, Sonics) are now tracked by the live ratings
 # era and excluded here.
