@@ -516,7 +516,12 @@ for _, r in _to_df.iterrows():
         continue
     in_field = (s_int in _to_field) and (team in _to_field[s_int])
     series_w = series_l = 0
-    if sd <= rs_end_dt:
+    # Strict `<` so the rs_end snapshot itself goes through the in_field
+    # gate below - non-playoff teams correctly drop out (cache will return
+    # null, UI renders '-') rather than carrying tiny LR-induced
+    # probabilities that round to 0.0%. PS teams pick up PHASE_POST_RS_TO
+    # (0.55) via series_won==0 at the bottom of the else branch.
+    if sd < rs_end_dt:
         gp = _to_games_played(s_int, team, sd)
         progress = PHASE_RS_MAX_TO * min(gp / GAMES_PER_RS_TO, 1.0)
     else:
