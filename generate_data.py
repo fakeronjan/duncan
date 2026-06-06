@@ -462,7 +462,13 @@ def _to_current_series_state(s, team, snap_date):
     """Return (series_wins, series_losses) for `team`'s CURRENT active
     playoff series at snap_date. Returns (0, 0) for RS / between-rounds /
     no-recent-event snapshots. A 14-day gap from the last recorded event
-    means the team has advanced and isn't in an active series yet."""
+    means the team has advanced and isn't in an active series yet. On a
+    clinch day itself, the team has also advanced - returns (0, 0) so the
+    snapshot reads as "post-round" rather than "still in round at series_w
+    = clinch threshold". Mirrors the GRIFFEY clinch-day fix; without this
+    the LR features look like (advanced progress, max series_w) which is a
+    rare pattern the model can't score consistently and produces spurious
+    mid-bracket flips (2016 GSW vs CLE on CF clinch day surfaced this)."""
     ev = _to_series_events.get((s, team), [])
     if not ev:
         return 0, 0
@@ -471,6 +477,12 @@ def _to_current_series_state(s, team, snap_date):
         return 0, 0
     last_d, last_w, last_l = cands[-1]
     if (snap_date - last_d).days > 14:
+        return 0, 0
+    # If the last event corresponds to a clinch entry for this team, the
+    # series ended on last_d and the team has advanced. Check against
+    # _to_clinches (series-aware - doesn't rely on era-wide threshold).
+    clinches = _to_clinches.get((s, team), [])
+    if any(d == last_d for (d, _) in clinches):
         return 0, 0
     return last_w, last_l
 
