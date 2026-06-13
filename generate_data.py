@@ -167,11 +167,12 @@ def clean(val):
 
 
 # duncan.py constructs last_match strings using the canonical franchise name
-# (e.g. "W vs. Charlotte Hornets 117-116" for a 2004-05 game when Charlotte
+# (e.g. "W 117-116 vs. Charlotte Hornets" for a 2004-05 game when Charlotte
 # was actually called the Bobcats). Rewrite the opponent portion with the
 # era-appropriate display name so historical Team Summary / Standings views
-# show the franchise's contemporary name.
-_LAST_MATCH_RE = re.compile(r'^([WL])\s+(vs\.?|@)\s+(.+?)\s+(\d+\s*-\s*\d+.*)$')
+# show the franchise's contemporary name. Format is "<W/L> <score> <vs.|@>
+# <opponent>" - the opponent is the trailing portion (mirrors DILLON).
+_LAST_MATCH_RE = re.compile(r'^([WLT])\s+(\d+\s*-\s*\d+)\s+(vs\.?(?:\s*\(N\))?|@)\s+(.+)$')
 
 def era_aware_last_match(raw, season):
     if not raw:
@@ -179,8 +180,8 @@ def era_aware_last_match(raw, season):
     m = _LAST_MATCH_RE.match(str(raw))
     if not m:
         return raw
-    letter, venue, opponent, score = m.groups()
-    return f"{letter} {venue} {display_name(opponent.strip(), season)} {score}"
+    letter, score, venue, opponent = m.groups()
+    return f"{letter} {score} {venue} {display_name(opponent.strip(), season)}"
 
 
 def slug(name):
