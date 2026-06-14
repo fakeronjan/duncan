@@ -920,7 +920,7 @@ function renderStandings() {
       <td class="rating-cell od-cell col-hide-mobile">${fmtTitleOdds(t.title_odds, t.title_odds_rank)}</td>
       <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
-      <td class="col-hide-mobile" style="text-align:center">${finishBadge(t.finals_status, t.cup_status)}</td>
+      <td class="col-hide-mobile" style="text-align:center;white-space:nowrap">${finishBadge(t.finals_status, t.cup_status)}</td>
     </tr>`;
   }).join('');
 
@@ -1094,7 +1094,7 @@ function renderTeamTable() {
     <td class="rating-cell od-cell col-hide-mobile">${fmtOD(g.rating_d, g.rank_d)}</td>
     <td class="rating-cell od-cell col-hide-mobile">${fmtTitleOdds(g.title_odds, g.title_odds_rank)}</td>
     <td class="col-hide-mobile" style="font-size:11px">${confBadge(g.conference || data.conference, g.finals_status)}</td>
-    <td class="col-hide-mobile" style="font-size:11px">${finishBadge(g.finals_status, g.cup_status)}</td>
+    <td class="col-hide-mobile" style="font-size:11px;white-space:nowrap">${finishBadge(g.finals_status, g.cup_status)}</td>
   </tr>`;
   }).join('');
 
@@ -1790,7 +1790,7 @@ function renderGoat() {
     ${GOAT_METRICS.map(m => m.field === pick.field
       ? `<td class="od-cell">${ratingBar(t[m.field], _bs2)}</td>`
       : `<td class="rating-cell od-cell col-hide-mobile">${fmtOD(t[m.field], null)}</td>`).join('')}
-    <td class="col-hide-mobile" style="font-size:11px">${finishBadge(t.finals_status, t.cup_status)}</td>
+    <td class="col-hide-mobile" style="font-size:11px;white-space:nowrap">${finishBadge(t.finals_status, t.cup_status)}</td>
   </tr>`;
   }).join('');
 
