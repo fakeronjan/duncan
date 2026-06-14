@@ -759,11 +759,17 @@ def build_goat(flag, require_finalist, sort_col='rating'):
     rows = df[(df['season_flag'] == flag) &
               (df['season'].astype(int).isin(completed_seasons))].copy()
     if require_finalist:
-        rows = rows[rows['finals_status'].fillna(0) >= 1]
+        # Champions only - the PS GOAT is a greatest-CHAMPIONS list; dominant
+        # non-winning seasons live on the RS GOAT. Length rounds down to the
+        # nearest 10 (capped at 50) so it grows cleanly as titles accrue.
+        rows = rows[rows['finals_status'].fillna(0) == 2]
+        n = min(50, (len(rows) // 10) * 10)
+    else:
+        n = 50
     # Drop any rows missing the sort column (older snapshots that pre-date
     # the O/D port wouldn't have rating_o/rating_d populated).
     rows = rows[rows[sort_col].notna()]
-    rows = rows.sort_values(sort_col, ascending=False).head(50).reset_index(drop=True)
+    rows = rows.sort_values(sort_col, ascending=False).head(n).reset_index(drop=True)
     out = []
     for i, (_, r) in enumerate(rows.iterrows()):
         s = int(r['season'])
