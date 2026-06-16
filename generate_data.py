@@ -991,6 +991,15 @@ def _build_pre_finals_lookup():
 _pre_finals_lookup = _build_pre_finals_lookup()
 print(f"  pre-Finals snapshots computed for {len(set(s for (_, s) in _pre_finals_lookup))} seasons")
 
+# End-of-regular-season rating per (team, season): the snapshot flagged
+# season_flag == 1 (the same one labeled "End of regular season"). The champion
+# entry's own `rating` is the end-of-playoffs (flag == 2) rating, so pairing the
+# two gives the Lists sub-view its "biggest playoff leap" ranking (PO - RS).
+_rs_rating_lookup = {
+    (r['name'], int(r['season'])): round(float(r['rating']), 3)
+    for _, r in df[df['season_flag'] == 1].iterrows()
+}
+
 def pre_finals_fields(name, season, reg_record):
     """Return the pre-Finals rating/rank/playoff_record block, or empty if missing."""
     p = _pre_finals_lookup.get((name, int(season)))
@@ -1060,6 +1069,7 @@ for season in sorted(df['season'].unique(), reverse=True):
             'display_name':   display_name(cr['name'], season),
             'conference':     conference(cr['name'], season),
             'rating':         round(float(cr['rating']), 3),
+            'rating_rs':      _rs_rating_lookup.get((cr['name'], int(season))),
             'rank':           int(cr['rank']),
             **_od_fields(cr),
             'record':         clean(cr['record']),
