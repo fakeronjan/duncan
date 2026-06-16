@@ -1530,10 +1530,8 @@ function renderBiggestLeap() {
       <td style="text-align:center;color:#888">${i + 1}</td>
       <td class="season-cell linked" data-season-link="${r.e.season}">${fmtSeason(r.e.season)}${seasonTag(r.e.season)}</td>
       ${teamTd}
-      <td class="col-hide-mobile" style="${num};white-space:nowrap">${c.regular_record || '-'}</td>
-      <td class="rating-cell" style="${num}">${c.rating_rs.toFixed(2)}</td>
-      <td class="col-hide-mobile" style="${num};white-space:nowrap">${c.playoff_record || '-'}</td>
-      <td class="rating-cell" style="${num}">${c.rating.toFixed(2)}</td>
+      <td class="col-hide-mobile" style="${num};white-space:nowrap">${fmtRecordStacked(c.regular_record, c.playoff_record)}</td>
+      <td class="rating-cell" style="${num};white-space:nowrap">${c.rating_rs.toFixed(2)} → ${c.rating.toFixed(2)}</td>
       <td class="sort-col rating-cell" style="${num}">${sign}${r.leap.toFixed(2)}</td>
     </tr>`;
   }).join('');
@@ -1544,10 +1542,8 @@ function renderBiggestLeap() {
         <th>#</th>
         <th style="text-align:center">Season</th>
         <th>Champion</th>
-        <th class="col-hide-mobile">Reg W-L</th>
-        <th>Reg Rating</th>
-        <th class="col-hide-mobile">PO W-L</th>
-        <th>PO Rating</th>
+        <th class="col-hide-mobile">W-L</th>
+        <th>Rating<br><span style="font-weight:400;font-size:9px;opacity:0.7;text-transform:none">(Season → Playoff)</span></th>
         <th class="sort-col">Leap</th>
       </tr></thead>
       <tbody>${body}</tbody>
