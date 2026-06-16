@@ -1522,19 +1522,19 @@ function renderBiggestLeap() {
       ? ` <span style="color:#888;font-size:0.85em;font-weight:400">(${c.title_count} 👑)</span>`
       : '';
     const teamTd = slug
-      ? `<td class="col-champ team-cell linked" data-team-slug="${slug}" data-season="${r.e.season}" style="white-space:nowrap">${label}${countStr}</td>`
-      : `<td class="col-champ team-cell" style="white-space:nowrap">${label}${countStr}</td>`;
+      ? `<td class="team-cell linked" data-team-slug="${slug}" data-season="${r.e.season}" style="white-space:nowrap">${label}${countStr}</td>`
+      : `<td class="team-cell" style="white-space:nowrap">${label}${countStr}</td>`;
     const sign = r.leap >= 0 ? '+' : '';
+    const num  = 'font-variant-numeric:tabular-nums';
     return `<tr>
       <td style="text-align:center;color:#888">${i + 1}</td>
       <td class="season-cell linked" data-season-link="${r.e.season}">${fmtSeason(r.e.season)}${seasonTag(r.e.season)}</td>
       ${teamTd}
-      <td class="col-champ rating-cell" style="font-variant-numeric:tabular-nums">${r.c.rating_rs.toFixed(2)}</td>
-      <td class="col-champ rating-cell" style="font-variant-numeric:tabular-nums">${r.c.rating.toFixed(2)}</td>
-      <td class="col-champ sort-col rating-cell" style="font-variant-numeric:tabular-nums">${sign}${r.leap.toFixed(2)}</td>
-      <td class="divider-col" style="text-align:center;font-size:11px;font-weight:600;white-space:nowrap;width:64px;padding:2px 4px;line-height:1.3">
-        ${r.e.series || ''}${r.e.final_score ? `<div style="font-size:10px;color:#888;font-weight:400">(${r.e.final_score})</div>` : ''}
-      </td>
+      <td class="col-hide-mobile" style="${num};white-space:nowrap">${c.regular_record || '-'}</td>
+      <td class="rating-cell" style="${num}">${c.rating_rs.toFixed(2)}</td>
+      <td class="col-hide-mobile" style="${num};white-space:nowrap">${c.playoff_record || '-'}</td>
+      <td class="rating-cell" style="${num}">${c.rating.toFixed(2)}</td>
+      <td class="sort-col rating-cell" style="${num}">${sign}${r.leap.toFixed(2)}</td>
     </tr>`;
   }).join('');
 
@@ -1543,11 +1543,12 @@ function renderBiggestLeap() {
       <thead><tr>
         <th>#</th>
         <th style="text-align:center">Season</th>
-        <th class="col-champ">Champion</th>
-        <th class="col-champ">End RS</th>
-        <th class="col-champ">End PO</th>
-        <th class="col-champ sort-col">Leap</th>
-        <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
+        <th>Champion</th>
+        <th class="col-hide-mobile">Reg W-L</th>
+        <th>Reg Rating</th>
+        <th class="col-hide-mobile">PO W-L</th>
+        <th>PO Rating</th>
+        <th class="sort-col">Leap</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table>`;
