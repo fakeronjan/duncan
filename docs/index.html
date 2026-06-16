@@ -1536,15 +1536,17 @@ function renderBiggestLeap() {
     </tr>`;
   }).join('');
 
+  // width:auto so this narrow 6-column table sizes to its content instead of
+  // stretching across the full tab width (the global table rule is width:100%).
   document.getElementById('history-rank-table-wrap').innerHTML = `
-    <table>
+    <table style="width:auto">
       <thead><tr>
         <th>#</th>
         <th style="text-align:center">Season</th>
         <th>Champion</th>
         <th class="col-hide-mobile">W-L</th>
         <th>Rating<br><span style="font-weight:400;font-size:9px;opacity:0.7;text-transform:none">(Season → Playoff)</span></th>
-        <th class="sort-col">Leap</th>
+        <th class="sort-col">Rating Increase</th>
       </tr></thead>
       <tbody>${body}</tbody>
     </table>`;
