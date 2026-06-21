@@ -1284,7 +1284,7 @@ function renderChampions() {
       : `<td class="${bg} team-cell" style="white-space:nowrap">${label}${countStr}${cupBadge}</td>`;
     return `
       ${teamTd}
-      <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
+      <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em;text-align:center">${rank}</td>
       <td class="${bg} rating-cell" style="font-variant-numeric:tabular-nums">${rating}</td>
       <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_o, t.rank_o)}</td>
       <td class="${bg} rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_d, t.rank_d)}</td>
@@ -1381,7 +1381,7 @@ function rankTeamBlock(t, bg, season, sortReact) {
   const reactClass = sortReact ? `${bg} rating-cell sort-col` : `${bg} rating-cell`;
   return `
     ${teamTd}
-    <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em">${rank}</td>
+    <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap;color:#888;font-size:0.85em;text-align:center">${rank}</td>
     <td class="${reactClass}" style="font-variant-numeric:tabular-nums">${rating}</td>
     <td class="${bg} col-hide-mobile" style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordStacked(t.regular_record, t.playoff_record)}</td>`;
 }
