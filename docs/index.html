@@ -160,7 +160,12 @@
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: #1a6b8a;
+    text-align: center;
   }
+  /* Numeric column headers (Rank, Rating, and rating-derived metrics) are
+     center-aligned to match their cells. thead th defaults to left for text
+     columns (Team, Champion, etc.); this opts the numeric ones back to center. */
+  thead th.col-num { text-align: center; }
   /* Stacked OFF / DEF cells: value above, rank below. Used on Standings,
      Team Summary, and Champions tables. */
   .od-val {
@@ -938,9 +943,9 @@ function renderStandings() {
   document.getElementById('standings-table-wrap').innerHTML = `
     <table>
       <thead><tr>
-        <th>Rank</th><th>Team</th>
+        <th class="col-num">Rank</th><th>Team</th>
         <th class="col-hide-mobile">Conf</th>
-        <th>W-L (Pct)</th><th>Rating</th>
+        <th>W-L (Pct)</th><th class="col-num">Rating</th>
         <th class="col-hide-mobile col-od">OFF</th>
         <th class="col-hide-mobile col-od">DEF</th>
         <th class="col-hide-mobile col-od" title="Probability of winning the NBA Finals, given (Rating, Offense, Defense, season progress, current playoff series state if applicable) through this point in the season. Trained on the same point in every other season (modern era only). League-wide probabilities sum to 100%.">Title Odds</th>
@@ -1110,7 +1115,7 @@ function renderTeamTable() {
     <table>
       <thead><tr>
         <th style="text-align:center">Season</th><th>Date</th><th>Last Game</th>
-        <th>W-L (Pct)</th><th>Rank</th><th>Rating</th>
+        <th>W-L (Pct)</th><th class="col-num">Rank</th><th class="col-num">Rating</th>
         <th class="col-hide-mobile col-od">OFF</th>
         <th class="col-hide-mobile col-od">DEF</th>
         <th class="col-hide-mobile col-od" title="Probability of winning the NBA Finals, given (Rating, Offense, Defense, season progress, current playoff series state if applicable) through this point in the season. Trained on the same point in every other season (modern era only). League-wide probabilities sum to 100%.">Title Odds</th>
@@ -1301,15 +1306,15 @@ function renderChampions() {
       <thead><tr>
         <th style="text-align:center">Season</th>
         <th class="col-champ">Champion</th>
-        <th class="col-champ col-hide-mobile">Rank</th>
-        <th class="col-champ">Rating</th>
+        <th class="col-champ col-hide-mobile col-num">Rank</th>
+        <th class="col-champ col-num">Rating</th>
         <th class="col-champ col-hide-mobile col-od">OFF</th>
         <th class="col-champ col-hide-mobile col-od">DEF</th>
         <th class="col-champ col-hide-mobile">W-L</th>
         <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
         <th class="col-ru">Runner-Up</th>
-        <th class="col-ru col-hide-mobile">Rank</th>
-        <th class="col-ru">Rating</th>
+        <th class="col-ru col-hide-mobile col-num">Rank</th>
+        <th class="col-ru col-num">Rating</th>
         <th class="col-ru col-hide-mobile col-od">OFF</th>
         <th class="col-ru col-hide-mobile col-od">DEF</th>
         <th class="col-ru col-hide-mobile">W-L</th>
@@ -1555,7 +1560,7 @@ function renderBiggestLeap() {
         <th style="text-align:center">Season</th>
         <th>Champion</th>
         <th class="col-hide-mobile">W-L</th>
-        <th>Rating<br><span style="font-weight:400;font-size:10px;opacity:0.7;text-transform:none">Season → Playoffs</span></th>
+        <th class="col-num">Rating<br><span style="font-weight:400;font-size:10px;opacity:0.7;text-transform:none">Season → Playoffs</span></th>
         <th class="sort-col" style="text-align:center">Rating Increase</th>
       </tr></thead>
       <tbody>${body}</tbody>
@@ -1647,20 +1652,20 @@ function renderRankingTable(rows, mode, metricLabel) {
   const label = metricLabel || 'Rating';
   const sortLeftReact = !isPreFinals;
   const leftReactHeader = sortLeftReact
-    ? `<th class="col-champ sort-col">${label}</th>`
-    : `<th class="col-champ">${label}${preTag}</th>`;
+    ? `<th class="col-champ sort-col col-num">${label}</th>`
+    : `<th class="col-champ col-num">${label}${preTag}</th>`;
 
   const head = `
     <th>#</th>
     <th style="text-align:center">Season</th>
     <th class="col-champ">${leftLabel}</th>
-    <th class="col-champ col-hide-mobile">Rank</th>
+    <th class="col-champ col-hide-mobile col-num">Rank</th>
     ${leftReactHeader}
     <th class="col-champ col-hide-mobile">W-L</th>
     <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
     <th class="col-ru">${rightLabel}</th>
-    <th class="col-ru col-hide-mobile">Rank</th>
-    <th class="col-ru">${label}${preTag}</th>
+    <th class="col-ru col-hide-mobile col-num">Rank</th>
+    <th class="col-ru col-num">${label}${preTag}</th>
     <th class="col-ru col-hide-mobile">W-L</th>
     ${metricHeader}`;
 
@@ -1699,13 +1704,13 @@ function renderRankingTable(rows, mode, metricLabel) {
 const PAIR_HEAD = `
     <th style="text-align:center">Season</th>
     <th class="col-champ">Champion</th>
-    <th class="col-champ col-hide-mobile">Rank</th>
-    <th class="col-champ">Rating</th>
+    <th class="col-champ col-hide-mobile col-num">Rank</th>
+    <th class="col-champ col-num">Rating</th>
     <th class="col-champ col-hide-mobile">W-L</th>
     <th class="divider-col" style="text-align:center;font-size:10px;width:64px">Series<br>(Last game)</th>
     <th class="col-ru">Runner-Up</th>
-    <th class="col-ru col-hide-mobile">Rank</th>
-    <th class="col-ru">Rating</th>
+    <th class="col-ru col-hide-mobile col-num">Rank</th>
+    <th class="col-ru col-num">Rating</th>
     <th class="col-ru col-hide-mobile">W-L</th>`;
 
 function pairRow(e, isPairEnd) {
