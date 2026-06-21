@@ -1000,6 +1000,20 @@ _rs_rating_lookup = {
     for _, r in df[df['season_flag'] == 1].iterrows()
 }
 
+# End-of-regular-season title odds per (team, season): the model's championship
+# probability for that team at the End-of-regular-season snapshot (flag == 1),
+# i.e. how likely the eventual champion looked the day the playoffs began. Powers
+# the Champions "Biggest favorites" / "Longest shots" lists. title_odds_rank is
+# the team's rank in those league-wide (sum-to-100%) odds at that snapshot. Odds
+# are produced for every season (the model trains on 2004+ and is applied to all),
+# so this covers the full champions list, not just the modern era.
+_rs_title_odds_lookup = {}
+_rs_title_odds_rank_lookup = {}
+for _, r in df[df['season_flag'] == 1].iterrows():
+    key = (r['name'], int(r['season']))
+    _rs_title_odds_lookup[key]      = _title_odds_val(r['ranking_id'], r['name'])
+    _rs_title_odds_rank_lookup[key] = _title_odds_rk(r['ranking_id'], r['name'])
+
 def pre_finals_fields(name, season, reg_record):
     """Return the pre-Finals rating/rank/playoff_record block, or empty if missing."""
     p = _pre_finals_lookup.get((name, int(season)))
@@ -1070,6 +1084,8 @@ for season in sorted(df['season'].unique(), reverse=True):
             'conference':     conference(cr['name'], season),
             'rating':         round(float(cr['rating']), 3),
             'rating_rs':      _rs_rating_lookup.get((cr['name'], int(season))),
+            'rs_title_odds':      _rs_title_odds_lookup.get((cr['name'], int(season))),
+            'rs_title_odds_rank': _rs_title_odds_rank_lookup.get((cr['name'], int(season))),
             'rank':           int(cr['rank']),
             **_od_fields(cr),
             'record':         clean(cr['record']),
