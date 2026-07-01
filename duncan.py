@@ -832,14 +832,17 @@ def assemble_final(master_df, ratings_df, standings_df):
     # -------------------------------------------------------------------------
     final_df['date_str'] = final_df['date'].astype(str)
 
+    # is_nba_cup_final rides along so the frontend can tag the NBA Cup final
+    # "Cup Final" in the Last Game column - the game shows as a played result
+    # even though it never counted in the W-L record.
     lastgameh = (
-        master_df[['date_game', 'home_team_name', 'home_result', 'visitor_team_name']]
-        .rename(columns={'home_team_name': 'name', 'date_game': 'date_str'})
+        master_df[['date_game', 'home_team_name', 'home_result', 'visitor_team_name', 'is_nba_cup_final']]
+        .rename(columns={'home_team_name': 'name', 'date_game': 'date_str', 'is_nba_cup_final': 'h_cup'})
         .assign(date_str=lambda d: d['date_str'].astype(str))
     )
     lastgamev = (
-        master_df[['date_game', 'visitor_team_name', 'visitor_result', 'home_team_name']]
-        .rename(columns={'visitor_team_name': 'name', 'date_game': 'date_str'})
+        master_df[['date_game', 'visitor_team_name', 'visitor_result', 'home_team_name', 'is_nba_cup_final']]
+        .rename(columns={'visitor_team_name': 'name', 'date_game': 'date_str', 'is_nba_cup_final': 'v_cup'})
         .assign(date_str=lambda d: d['date_str'].astype(str))
     )
 
@@ -851,6 +854,10 @@ def assemble_final(master_df, ratings_df, standings_df):
 
     final_df['last_game_result'] = (final_df['home_result'] + final_df['visitor_result'])
     final_df['opponent'] = final_df['home_team_name'] + final_df['visitor_team_name']
+    # 1 iff the displayed Last Game is the NBA Cup final (one side matches per day).
+    final_df['last_game_is_cup'] = (
+        final_df['h_cup'].fillna(0) + final_df['v_cup'].fillna(0)
+    ).clip(upper=1).astype(int)
 
     final_df = final_df[[
         'ranking_id', 'date', 'season', 'name', 'rating', 'rank',
@@ -858,7 +865,7 @@ def assemble_final(master_df, ratings_df, standings_df):
         'record', 'current_date', 'season_flag', 'name_season',
         'champ', 'runnerup', 'finals_status',
         'cup_champ', 'cup_runnerup', 'cup_status',
-        'last_game_result', 'opponent'
+        'last_game_result', 'last_game_is_cup', 'opponent'
     ]]
 
     final_df.to_csv('duncan_ratings_with_standings.csv', index=False)

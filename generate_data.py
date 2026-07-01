@@ -225,6 +225,7 @@ for (team, season), tdf in df[df['is_game_day'] == 1].sort_values('date').groupb
     _last_game_history[(team, int(season))] = (
         [str(d) for d in tdf['date'].tolist()],
         tdf['last_game_result'].tolist(),
+        tdf['last_game_is_cup'].tolist() if 'last_game_is_cup' in tdf.columns else [0] * len(tdf),
     )
 
 
@@ -232,7 +233,7 @@ def last_game_as_of(team, snap_date_str, season):
     entry = _last_game_history.get((team, int(season)))
     if not entry:
         return ''
-    dates, games_list = entry
+    dates, games_list, _ = entry
     idx = bisect_right(dates, snap_date_str) - 1
     return games_list[idx] if idx >= 0 else ''
 
@@ -241,9 +242,19 @@ def last_game_date_as_of(team, snap_date_str, season):
     entry = _last_game_history.get((team, int(season)))
     if not entry:
         return ''
-    dates, _ = entry
+    dates, _, _ = entry
     idx = bisect_right(dates, snap_date_str) - 1
     return dates[idx] if idx >= 0 else ''
+
+
+def last_game_is_cup_as_of(team, snap_date_str, season):
+    """1 iff the team's most recent game as of snap_date_str is the NBA Cup final."""
+    entry = _last_game_history.get((team, int(season)))
+    if not entry:
+        return 0
+    dates, _, cup_list = entry
+    idx = bisect_right(dates, snap_date_str) - 1
+    return int(cup_list[idx]) if idx >= 0 else 0
 
 
 # Per-season last regular-season date - used to flag playoff vs regular-season entries
@@ -706,6 +717,7 @@ standings_data = {
             'title_odds_rank': _title_odds_rk(r['ranking_id'], r['name']),
             'record':          clean(r['record']),
             'last_match':      era_aware_last_match(clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(r['name'], str(r['date']), r['season']), r['season']),
+            'last_match_is_cup': int(r['last_game_is_cup']) if _played(r['last_game_result']) else last_game_is_cup_as_of(r['name'], str(r['date']), r['season']),
             'finals_status':   int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
             'cup_status':      int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,
         }
@@ -860,6 +872,7 @@ for team in all_teams:
                 'regular_record':    reg,
                 'playoff_record':    po,
                 'last_match':        era_aware_last_match(clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(team, str(r['date']), season), season),
+                'last_match_is_cup': int(r['last_game_is_cup']) if _played(r['last_game_result']) else last_game_is_cup_as_of(team, str(r['date']), season),
                 'is_end_of_season':  int(r['is_end_of_season']),
                 'season_flag':       int(r['season_flag']),
                 'is_playoff':        int(is_playoff(season, r['date'])),
@@ -919,6 +932,7 @@ for season in all_seasons:
                 'regular_record':  reg,
                 'playoff_record':  po,
                 'last_match':      era_aware_last_match(clean(r['last_game_result']) if played_today else last_game_as_of(r['name'], snap_date, season), season),
+                'last_match_is_cup': int(r['last_game_is_cup']) if played_today else last_game_is_cup_as_of(r['name'], snap_date, season),
                 'last_match_date': snap_date if played_today else last_game_date_as_of(r['name'], snap_date, season),
                 'finals_status':   int(r['finals_status']) if not pd.isna(r['finals_status']) else 0,
             'cup_status':      int(r['cup_status']) if 'cup_status' in r and not pd.isna(r['cup_status']) else 0,

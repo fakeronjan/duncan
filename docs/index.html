@@ -226,6 +226,18 @@
   }
   .finish-champion { background: #c8a84b; color: #1a6b8a; }
   .finish-runner   { background: #ddd; color: #444; }
+  .cup-final-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #eaf1f7;
+    color: #1a6b8a;
+    border: 1px solid #cfe0ec;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
   .conf-pill       { background: #f4f4f4; color: #555; border: 1px solid #e8e8e8; }
   .short-season-tag {
     display: inline-block;
@@ -694,18 +706,23 @@ function resultClass(match, isStale) {
 // Parse "L vs. Orlando Magic 90-99" or "W @ Boston Celtics 84-96" → wrap
 // opponent name in a linked span. Opponent name may be a historical name
 // (e.g. "Charlotte Bobcats") - nameToSlug includes those aliases.
-function renderLastMatch(raw, season, isStale) {
+function renderLastMatch(raw, season, isStale, isCup) {
   const display = displayMatch(raw);
   if (!display) return '-';
+  // NBA Cup final: a real played game that moves the rating but does NOT
+  // count in the W-L record. Tag it so that's self-evident.
+  const cupTag = isCup
+    ? ` <span class="cup-final-tag" title="NBA Cup final (counts for ratings, not the W-L record)">Cup Final</span>`
+    : '';
   const rc = resultClass(raw, isStale);
   const m = display.match(/^([WLT])\s+(\d+\s*-\s*\d+)\s+(vs\.?(?:\s*\(N\))?|@)\s+(.+)$/);
-  if (!m) return `<span class="${rc}">${display}</span>`;
+  if (!m) return `<span class="${rc}">${display}</span>${cupTag}`;
   const [, letter, score, venue, opponent] = m;
   const slug = nameToSlug[opponent.trim()];
   const oppHtml = slug
     ? `<span class="team-link linked" data-team-slug="${slug}" data-season="${season}">${opponent}</span>`
     : opponent;
-  return `<span class="${rc}">${letter} ${score} ${venue} ${oppHtml}</span>`;
+  return `<span class="${rc}">${letter} ${score} ${venue} ${oppHtml}</span>${cupTag}`;
 }
 
 // ── Deep-link handlers ──────────────────────────────────────────────────────
@@ -931,7 +948,7 @@ function renderStandings() {
       <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_o, t.rank_o)}</td>
       <td class="rating-cell od-cell col-hide-mobile">${fmtOD(t.rating_d, t.rank_d)}</td>
       <td class="rating-cell od-cell col-hide-mobile">${fmtTitleOdds(t.title_odds, t.title_odds_rank)}</td>
-      <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale)}</td>
+      <td class="last-match-cell">${renderLastMatch(t.last_match, season, isStale, t.last_match_is_cup)}</td>
       <td class="col-hide-mobile" style="font-size:11px;color:#888;white-space:nowrap">${t.last_match_date || ''}</td>
       <td class="col-hide-mobile" style="text-align:center;white-space:nowrap">${finishBadge(t.finals_status, t.cup_status)}</td>
     </tr>`;
@@ -1099,7 +1116,7 @@ function renderTeamTable() {
     return `<tr>
     <td class="linked" data-season-link="${g.season}" style="font-size:11px;color:#555;text-align:center">${seasonCell}</td>
     <td style="white-space:nowrap;color:#888;font-size:12px">${dateCell}</td>
-    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, !!g._isStale)}</td>
+    <td class="last-match-cell">${renderLastMatch(g.last_match, g.season, !!g._isStale, g.last_match_is_cup)}</td>
     <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${fmtRecordSmart(g.regular_record, g.playoff_record, g.record)}</td>
     <td class="rank-cell">${g.rank}</td>
     <td>${ratingBar(g.rating, _bs1)}</td>
