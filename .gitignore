@@ -8,3 +8,6 @@ investigations/
 
 # Engine-migration backup snapshots (never commit)
 *-bak
+duncan_ratings.csv
+daily_standings.csv
+duncan_ratings_with_standings.csv

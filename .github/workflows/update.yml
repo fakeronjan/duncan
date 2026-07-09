@@ -26,8 +26,31 @@ jobs:
           pip install cython numpy
           pip install --no-build-isolation -r requirements.txt
 
+      # duncan_ratings.csv + daily_standings.csv are duncan.py's incremental
+      # scratchpads (regenerable build artifacts, NOT source). They were
+      # re-committed daily as big uncompressed CSVs that rewrite most rows every
+      # run (ratings shift), so git could barely delta them - ~40MB/day of bloat.
+      # They now live in the Actions cache. A miss (first run / eviction) is safe:
+      # duncan.py rebuilds from scratch (try/except FileNotFoundError).
+      - name: Restore ratings caches
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            duncan_ratings.csv
+            daily_standings.csv
+          key: duncan-caches-${{ github.run_id }}
+          restore-keys: duncan-caches-
+
       - name: Run ratings engine
         run: python duncan.py
+
+      - name: Save ratings caches
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            duncan_ratings.csv
+            daily_standings.csv
+          key: duncan-caches-${{ github.run_id }}
 
       - name: Generate web data
         run: python generate_data.py
@@ -36,7 +59,7 @@ jobs:
         run: |
           git config user.name  "DUNCAN Bot"
           git config user.email "duncan-bot@users.noreply.github.com"
-          git add loaded_nba_games.csv all_nba_games.csv duncan_ratings.csv daily_standings.csv duncan_ratings_with_standings.csv docs/data/
+          git add loaded_nba_games.csv all_nba_games.csv docs/data/
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
