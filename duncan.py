@@ -93,8 +93,18 @@ MONTHS = [
 def scrape_table(url, year):
     """Scrape a single basketball-reference schedule page into a DataFrame."""
     r = requests.get(url)
-    if '404' in str(r):
+    if r.status_code == 404:
         return pd.DataFrame()
+    if r.status_code == 403 or 'Just a moment' in r.text:
+        # Same company/Cloudflare setup as pro-football-reference, which
+        # started serving a bot challenge instead of real pages in Aug 2026 -
+        # the cron kept running green for weeks before anyone noticed because
+        # a blocked request just silently parsed into an empty table. Fail
+        # loud instead so a GH Actions failure email catches it immediately.
+        raise RuntimeError(
+            f"basketball-reference blocked the scraper (status {r.status_code}) "
+            f"fetching {url}"
+        )
 
     html = BeautifulSoup(r.text, "lxml")
     columns = [i['data-stat'] for i in html.select('#schedule > thead > tr > th')]
