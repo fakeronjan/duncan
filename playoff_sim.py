@@ -136,9 +136,9 @@ def round_names(season):
     """(full, short) names for every round, first to last."""
     if season >= 2020:
         return (['Play-In', 'First Round', 'Conference Semifinals', 'Conference Finals', 'Finals'],
-                ['Play-In', 'R1', 'R2', 'CF', 'Final'])
+                ['Play-In', 'R1', 'R2', 'Conf Final', 'Final'])
     return (['First Round', 'Conference Semifinals', 'Conference Finals', 'Finals'],
-            ['R1', 'R2', 'CF', 'Final'])
+            ['R1', 'R2', 'Conf Final', 'Final'])
 
 
 def entry_rounds(season):
