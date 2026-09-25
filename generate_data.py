@@ -309,362 +309,131 @@ def playoff_record(full_record, regular_record):
     return f"{pw}-{pl}"
 
 
-# ── Title Odds (logistic regression, leave-one-season-out, 2004+) ────────────
-# Continuous-progress model: P(champion | rating, rating_o, rating_d,
-# season_progress, plus 3 rating×progress interactions). Phase-weighted
-# progress: linear 0→0.5 during RS (games_played/82), then jumps at each
-# playoff round (post-RS = 0.55, post-R1 = 0.70, post-R2 = 0.85,
-# post-CF = 0.95, crowned = 1.0). Eliminated teams hard-set to 0%; alive
-# teams renormalized to sum to 100% per snapshot. Training cutoff at
-# 2004+ (24 modern seasons) gave the best-calibrated predictions in
-# evaluation - pre-2004 dynasty data made the model overconfident on
-# mid-range probabilities.
-print("Computing title odds (logistic regression, leave-one-season-out)...")
-from scipy.optimize import minimize
+# ── Title Odds (season + playoff Monte Carlo, playoff_sim.py) ────────────────
+# Replaced the leave-one-season-out logistic model 2026-09-25 (ported from
+# LOBO). Every snapshot simulates the rest of the regular season, seeds that
+# era's format (division-winner rules, play-in), and plays the bracket;
+# played games are fixed. Seasons are cached by fingerprint (see
+# playoff_sim.compute_cached), so a daily run recomputes only what changed.
+print("Computing title odds (season + playoff Monte Carlo)...")
+import playoff_sim
+from duncan import REGULAR_SEASON_GAMES
 
-GAMES_PER_RS_TO = 82
-PHASE_RS_MAX_TO        = 0.50
-PHASE_POST_RS_TO       = 0.55
-PHASE_R2_ENTRY_TO      = 0.70
-PHASE_CF_ENTRY_TO      = 0.85
-PHASE_FINALS_ENTRY_TO  = 0.95
-PHASE_CHAMPION_TO      = 1.00
-TITLE_TRAIN_FROM_SEASON = 2004  # no upper bound - every newly-completed
-                                # season auto-joins the training pool on the
-                                # next cron run, mirroring DILLON's pattern.
-
-# Seasons with NBA Play-In Tournament. 2020 was the bubble's 1-game
-# play-in for the 8 seed; 2021+ is the formal 4-team tournament (7v8 and
-# 9v10, then loser-of-7v8 vs winner-of-9v10 for the 8 seed). All play-in
-# matchups are BO1 - a single game. Used by the bracket walker below to
-# distinguish a real series (BO5 / BO7) from a play-in matchup. Add the
-# new season here when it becomes an in-progress season.
-PLAY_IN_SEASONS = {2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027}
-
-# RS-end dates per season (mode-of-threshold game per team, +/- 2 days)
-REGULAR_SEASON_GAMES_TO = {1999: 50, 2012: 66, 2020: 72, 2021: 72}
-games_to = games.copy()
-games_to['date_game'] = pd.to_datetime(games_to['date_game'])
-_to_rs_end = {}
-for s, sg in games_to.groupby('season'):
-    th = REGULAR_SEASON_GAMES_TO.get(int(s), 82)
-    home = sg[['date_game', 'home_team_name']].rename(columns={'home_team_name': 'team'})
-    away = sg[['date_game', 'visitor_team_name']].rename(columns={'visitor_team_name': 'team'})
-    ag = pd.concat([home, away]).sort_values('date_game')
-    ag['n'] = ag.groupby('team').cumcount() + 1
-    thresh = ag[ag['n'] == th].groupby('team')['date_game'].first()
-    if thresh.empty:
-        continue
-    mode = thresh.mode().iloc[0]
-    d = pd.Timedelta(days=2)
-    w = thresh[(thresh >= mode - d) & (thresh <= mode + d)]
-    _to_rs_end[int(s)] = w.max()
-
-# Bracket walk: per-season clinch dates + elimination dates + per-game series state
-_to_clinches = {}             # (season, team) -> sorted list of (date, won)
-_to_eliminated = {}           # (season, team) -> elimination date (None if never)
-_to_field = {}                # season -> set of teams in playoffs
-_to_series_events = {}        # (season, team) -> sorted list of (date, series_wins, series_losses)
+_DIV = pd.read_csv('nba_divisions.csv')
+_DIV_BY = {(int(r.season), r.team): (r.conference, r.division) for r in _DIV.itertuples()}
 
 
-def _to_clinch_threshold(season):
-    """Era-aware first-round clinch threshold (NBA R1 format moved from BO3
-    to BO5 to BO7 over the data window). For 2003+ all rounds are BO7 so
-    the BO7 4-win threshold also correctly handles in-progress series at
-    1-0 / 2-1 (won't falsely mark as decided). For 1984-2002 the threshold
-    of 3 captures both BO5 R1 series and BO7 later rounds in closed
-    historical data (no in-progress R2+ snapshots in those years). For
-    pre-1984 the BO3 R1 threshold is 2."""
-    s = int(season)
-    if s >= 2003:
-        return 4
-    if s >= 1984:
-        return 3
-    return 2
+def _conf_of(team, season):
+    if (season, team) in _DIV_BY:
+        return _DIV_BY[(season, team)][0]
+    return conference(team, season)
 
 
-def _to_proc_series(sub, a, b, history, season, series_state=None):
-    """Process a single playoff series (a sub-frame of games between team a
-    and team b). Records the series-clinch outcome in `history` (used for
-    elimination + championship detection) AND, if `series_state` is given,
-    emits per-game (date, wins, losses) events for both teams (used downstream
-    to score the current-series feature for the title-odds model).
-    """
-    aw = (((sub['home_team_name']==a)&(sub['home_win']==1))|((sub['visitor_team_name']==a)&(sub['home_win']==0))).sum()
-    bw = len(sub) - aw
-    if series_state is not None:
-        sub_sorted = sub.sort_values('date_game').reset_index(drop=True)
-        a_w = b_w = 0
-        for _, g in sub_sorted.iterrows():
-            a_won = (g['home_team_name']==a and g['home_win']==1) or (g['visitor_team_name']==a and g['home_win']==0)
-            if a_won: a_w += 1
-            else:     b_w += 1
-            series_state.setdefault(a, []).append((g['date_game'], a_w, b_w))
-            series_state.setdefault(b, []).append((g['date_game'], b_w, a_w))
-    clinch = _to_clinch_threshold(season)
-    if aw >= clinch and aw > bw:
-        winner, loser = a, b
-    elif bw >= clinch and bw > aw:
-        winner, loser = b, a
-    else:
-        return
-    cd = sub['date_game'].max()
-    history.setdefault(winner, []).append((cd, True))
-    history.setdefault(loser,  []).append((cd, False))
+def _div_of(team, season):
+    # Divisions unchanged since the 2004-05 realignment: later seasons use 2015's.
+    return _DIV_BY.get((min(season, 2015), team), (None, 'none'))[1]
 
 
-for s, sg_all in games_to.groupby('season'):
-    s = int(s)
-    rs_end_dt = _to_rs_end.get(s)
-    if rs_end_dt is None:
-        continue
-    pg = sg_all[sg_all['date_game'] > rs_end_dt].copy()
-    if pg.empty:
-        continue
-    pg['_m'] = pg.apply(lambda r: tuple(sorted([r['home_team_name'], r['visitor_team_name']])), axis=1)
-    history = {}
-    series_state = {}   # team -> [(date, series_wins, series_losses), ...]
-    # "Real bracket" = teams in actual playoff series (BO5 / BO7), as
-    # opposed to play-in tournament matchups (BO1). The old filter used
-    # `len(mg) < 3` as a proxy for "play-in," but that also swept up
-    # in-progress real series at games 1-2 (cost us the 2026 Knicks-Spurs
-    # 2-0 Finals read). Switched to an explicit play-in-season check:
-    # skip exactly the 1-game matchups in seasons that have a play-in
-    # tournament, leave 2-game in-progress series alone.
-    real_field = set()
-    last_post_rs_date_for_team = {}  # used as elim fallback for play-in losers
-    for matchup, mg in pg.groupby('_m'):
-        a, b = matchup
-        if s in PLAY_IN_SEASONS and len(mg) == 1:
-            continue  # play-in matchup (BO1), not a real series
-        mg_s = mg.sort_values('date_game').reset_index(drop=True)
-        cur = [0]
-        for i in range(1, len(mg_s)):
-            gap = (mg_s.loc[i, 'date_game'] - mg_s.loc[i-1, 'date_game']).days
-            if gap > 10:
-                _to_proc_series(mg_s.iloc[cur], a, b, history, s, series_state)
-                cur = [i]
-            else:
-                cur.append(i)
-        _to_proc_series(mg_s.iloc[cur], a, b, history, s, series_state)
-        real_field.add(a)
-        real_field.add(b)
-    _to_field[s] = real_field
-    for team in real_field:
-        entries = sorted(history.get(team, []), key=lambda x: x[0])
-        _to_clinches[(s, team)] = entries
-        elim = next((d for (d, w) in entries if not w), None)
-        _to_eliminated[(s, team)] = elim
-        _to_series_events[(s, team)] = sorted(series_state.get(team, []), key=lambda x: x[0])
+_sim_games = games.copy()
+if 'is_nba_cup_final' in _sim_games.columns:
+    _sim_games = _sim_games[_sim_games['is_nba_cup_final'] != 1]  # not a standings game
+_sim_games = _sim_games.rename(columns={'date_game': 'date', 'home_team_name': 'home',
+                                        'visitor_team_name': 'away'})
+_sim_games = _sim_games[['season', 'date', 'home', 'away', 'home_pts', 'visitor_pts']].copy()
+_sim_games['date'] = pd.to_datetime(_sim_games['date'])
+# Current season's remaining schedule: basketball-reference's unplayed rows.
+# Unplayed rows dated before the latest played game are stale postponements.
+_loaded = pd.read_csv('loaded_nba_games.csv')
+_cur_season = int(_sim_games['season'].max())
+_sched = _loaded[(_loaded['season'] == _cur_season) & _loaded['home_pts'].isna()].copy()
+if not _sched.empty:
+    _sched['date'] = pd.to_datetime(_sched['date_game'], format='%a, %b %d, %Y')
+    _last_played = _sim_games.loc[_sim_games['season'] == _cur_season, 'date'].max()
+    _sched = _sched[_sched['date'] >= _last_played]
+    from duncan import TEAM_ALIASES
+    _sim_games = pd.concat([_sim_games, pd.DataFrame({
+        'season': _cur_season, 'date': _sched['date'],
+        'home': _sched['home_team_name'].replace(TEAM_ALIASES),
+        'away': _sched['visitor_team_name'].replace(TEAM_ALIASES),
+        'home_pts': np.nan, 'visitor_pts': np.nan})], ignore_index=True)
 
-# Champion per season: the team whose bracket history is all wins, no
-# losses (they advanced through every series they played). Works across
-# eras even though the number of series varies - 4 in modern bracket, 3
-# for bye'd top seeds in the pre-1984 12-team format.
-_to_champion = {}
-for (s, team), entries in _to_clinches.items():
-    if entries and all(e[1] for e in entries):
-        _to_champion[s] = team
-
-# games_played(season, team, snap_date)
-_to_game_log = {}  # (season, team) -> sorted list of game dates
-for _, g in games_to.iterrows():
-    s_int = int(g['season'])
-    for t in (g['home_team_name'], g['visitor_team_name']):
-        _to_game_log.setdefault((s_int, t), []).append(g['date_game'])
-for k in _to_game_log:
-    _to_game_log[k] = sorted(_to_game_log[k])
-
-
-def _to_games_played(s, t, snap_date):
-    log = _to_game_log.get((s, t), [])
-    return bisect_right(log, snap_date)
-
-
-def _to_current_series_state(s, team, snap_date):
-    """Return (series_wins, series_losses) for `team`'s CURRENT active
-    playoff series at snap_date. Returns (0, 0) for RS / between-rounds /
-    no-recent-event snapshots. A 14-day gap from the last recorded event
-    means the team has advanced and isn't in an active series yet. On a
-    clinch day itself, the team has also advanced - returns (0, 0) so the
-    snapshot reads as "post-round" rather than "still in round at series_w
-    = clinch threshold". Mirrors the GRIFFEY clinch-day fix; without this
-    the LR features look like (advanced progress, max series_w) which is a
-    rare pattern the model can't score consistently and produces spurious
-    mid-bracket flips (2016 GSW vs CLE on CF clinch day surfaced this)."""
-    ev = _to_series_events.get((s, team), [])
-    if not ev:
-        return 0, 0
-    cands = [(d, w, l) for (d, w, l) in ev if d <= snap_date]
-    if not cands:
-        return 0, 0
-    last_d, last_w, last_l = cands[-1]
-    if (snap_date - last_d).days > 14:
-        return 0, 0
-    # If the last event corresponds to a clinch entry for this team, the
-    # series ended on last_d and the team has advanced. Check against
-    # _to_clinches (series-aware - doesn't rely on era-wide threshold).
-    clinches = _to_clinches.get((s, team), [])
-    if any(d == last_d for (d, _) in clinches):
-        return 0, 0
-    return last_w, last_l
-
-
-def _to_series_padded(w, l, season, series_won):
-    """Apply era-aware padding so series state is reported in BO7-equivalent
-    space - BO5 series get +1 wins and +1 losses, BO3 series get +2 each.
-    Only the first round (series_won == 0) needs padding in historical eras;
-    all other rounds were BO7. This lets the 2004+-trained model "see" a
-    historical R1 BO5 series 3-1 as the equivalent BO7 state 4-2 (sweep
-    end) and apply the right coefficient."""
-    if series_won == 0:
-        clinch = _to_clinch_threshold(season)
-    else:
-        clinch = 4
-    pad = 4 - clinch  # 0 for BO7, 1 for BO5, 2 for BO3
-    return w + pad, l + pad
-
-
-# Build training/prediction rows
-_to_df = df[df['rating_o'].notna() & df['rating_d'].notna()].copy()
-_to_df['date_dt'] = pd.to_datetime(_to_df['date'])
-
-_to_rows = []
-for _, r in _to_df.iterrows():
-    s_int = int(r['season'])
-    team  = r['name']
-    sd    = r['date_dt']
-    rs_end_dt = _to_rs_end.get(s_int)
-    if rs_end_dt is None:
-        continue
-    in_field = (s_int in _to_field) and (team in _to_field[s_int])
-    series_w = series_l = 0
-    # Strict `<` so the rs_end snapshot itself goes through the in_field
-    # gate below - non-playoff teams correctly drop out (cache will return
-    # null, UI renders '-') rather than carrying tiny LR-induced
-    # probabilities that round to 0.0%. PS teams pick up PHASE_POST_RS_TO
-    # (0.55) via series_won==0 at the bottom of the else branch.
-    if sd < rs_end_dt:
-        gp = _to_games_played(s_int, team, sd)
-        progress = PHASE_RS_MAX_TO * min(gp / GAMES_PER_RS_TO, 1.0)
-    else:
-        if not in_field:
-            continue
-        elim = _to_eliminated.get((s_int, team))
-        if elim is not None and sd >= elim:
-            continue
-        clinches = _to_clinches.get((s_int, team), [])
-        series_won = sum(1 for (d, w) in clinches if d <= sd and w)
-        if series_won == 0:
-            progress = PHASE_POST_RS_TO
-        elif series_won == 1:
-            progress = PHASE_R2_ENTRY_TO
-        elif series_won == 2:
-            progress = PHASE_CF_ENTRY_TO
-        elif series_won == 3:
-            progress = PHASE_FINALS_ENTRY_TO
-        else:
-            progress = PHASE_CHAMPION_TO
-        raw_w, raw_l = _to_current_series_state(s_int, team, sd)
-        series_w, series_l = _to_series_padded(raw_w, raw_l, s_int, series_won)
-    _to_rows.append({
-        'season': s_int, 'team': team, 'ranking_id': int(r['ranking_id']),
-        'rating': float(r['rating']), 'rating_o': float(r['rating_o']),
-        'rating_d': float(r['rating_d']), 'progress': float(progress),
-        'series_w': int(series_w), 'series_l': int(series_l),
-        'is_champion': 1 if _to_champion.get(s_int) == team else 0,
-    })
-
-_to_train_df = pd.DataFrame(_to_rows)
-print(f"  Title-odds training rows: {len(_to_train_df):,} "
-      f"({int(_to_train_df['is_champion'].sum())} champion-positive)")
-
-
-def _to_features(d):
-    """Title-odds feature matrix. Includes the per-snapshot current-series
-    state (series_w, series_l) - values are era-padded so a BO5 3-1 reads
-    as BO7 4-2. For non-playoff / between-rounds snapshots, both are 0."""
-    p = d['progress'].values
-    return np.column_stack([
-        d['rating'].values, d['rating_o'].values, d['rating_d'].values,
-        p,
-        d['rating'].values * p,
-        d['rating_o'].values * p,
-        d['rating_d'].values * p,
-        d['series_w'].values,
-        d['series_l'].values,
-    ])
-
-
-def _to_fit_logistic(X, y, reg=1e-3):
-    n, k = X.shape
-    Xa = np.column_stack([np.ones(n), X])
-    def nll(beta):
-        z = Xa @ beta
-        return float(np.sum(np.maximum(z, 0.0) + np.log1p(np.exp(-np.abs(z))) - y * z) + reg * np.sum(beta[1:] ** 2))
-    def grad(beta):
-        z = Xa @ beta
-        p_hat = 1.0 / (1.0 + np.exp(-z))
-        g = Xa.T @ (p_hat - y)
-        g[1:] += 2 * reg * beta[1:]
-        return g
-    res = minimize(nll, np.zeros(k + 1), jac=grad, method='BFGS',
-                   options={'maxiter': 200, 'gtol': 1e-6})
-    return res.x
-
-
-def _to_predict_logistic(X, beta):
-    Xa = np.column_stack([np.ones(X.shape[0]), X])
-    z = Xa @ beta
-    return 1.0 / (1.0 + np.exp(-z))
-
-
-# LOO across modern seasons (2004+ with known champion). For in-progress
-# current seasons, predict with full-history-trained model.
-_eligible = _to_train_df[
-    _to_train_df['season'] >= TITLE_TRAIN_FROM_SEASON
-].copy()
-_completed_seasons = {s for s in _eligible['season'].unique() if s in _to_champion}
-
+_sim_ratings = df[['season', 'date', 'name', 'rating']].copy()
+_sim_ratings['date'] = pd.to_datetime(_sim_ratings['date'])
+_sim_ratings['season'] = _sim_ratings['season'].astype(int)
+_sim_rs_end = {int(k): pd.Timestamp(v) for k, v in _rs_end_dates.items()}
+_playoff_odds, _brackets = playoff_sim.compute_cached(
+    _sim_games, _sim_ratings, lambda s: REGULAR_SEASON_GAMES.get(s, 82), _conf_of, _div_of,
+    _cur_season, _sim_rs_end)
+_playoff_odds['date'] = _playoff_odds['date'].dt.date
+_rid_by_date = df.drop_duplicates('date').set_index('date')['ranking_id'].to_dict()
+_playoff_odds['ranking_id'] = _playoff_odds['date'].map(_rid_by_date)
+# Only non-zero odds are cached: eliminated teams render '-'.
 _title_odds_cache = {}  # (ranking_id, team) -> float
-for s_int in _completed_seasons:
-    train = _eligible[_eligible['season'] != s_int]
-    held  = _eligible[_eligible['season'] == s_int]
-    if train.empty or held.empty:
-        continue
-    beta = _to_fit_logistic(_to_features(train), train['is_champion'].values.astype(float))
-    held = held.copy()
-    held['p_raw'] = _to_predict_logistic(_to_features(held), beta)
-    held['p_norm'] = held.groupby('ranking_id')['p_raw'].transform(
-        lambda x: x / x.sum() if x.sum() > 0 else 0.0)
-    for _, r in held.iterrows():
-        _title_odds_cache[(r['ranking_id'], r['team'])] = float(r['p_norm'])
+for rid, team, p in _playoff_odds[['ranking_id', 'team', 'champ']].itertuples(index=False):
+    if p > 0 and not pd.isna(rid):
+        _title_odds_cache[(int(rid), team)] = float(p)
 
-# In-progress / current-season predictions: train on the full 2004+ eligible
-# set (all known champions) and apply to the in-progress season(s).
-_in_progress = _to_train_df[~_to_train_df['season'].isin(_completed_seasons)]
-if not _in_progress.empty and not _eligible.empty:
-    beta_full = _to_fit_logistic(_to_features(_eligible), _eligible['is_champion'].values.astype(float))
-    cur = _in_progress.copy()
-    cur['p_raw'] = _to_predict_logistic(_to_features(cur), beta_full)
-    cur['p_norm'] = cur.groupby('ranking_id')['p_raw'].transform(
-        lambda x: x / x.sum() if x.sum() > 0 else 0.0)
-    for _, r in cur.iterrows():
-        _title_odds_cache[(r['ranking_id'], r['team'])] = float(r['p_norm'])
 
-# Pre-2004 historical seasons: also predict with the full-history-trained
-# model so the UI surfaces something coherent on older snapshots, even though
-# they're outside the training cutoff. Predictions there are extrapolations
-# - calibration is not guaranteed.
-_pre_window = _to_train_df[_to_train_df['season'] < TITLE_TRAIN_FROM_SEASON]
-if not _pre_window.empty:
-    pre = _pre_window.copy()
-    pre['p_raw'] = _to_predict_logistic(_to_features(pre), beta_full if not _in_progress.empty else
-                                         _to_fit_logistic(_to_features(_eligible), _eligible['is_champion'].values.astype(float)))
-    pre['p_norm'] = pre.groupby('ranking_id')['p_raw'].transform(
-        lambda x: x / x.sum() if x.sum() > 0 else 0.0)
-    for _, r in pre.iterrows():
-        _title_odds_cache[(r['ranking_id'], r['team'])] = float(r['p_norm'])
+# ── Playoff odds tab (docs/data/playoff_odds/) ──
+# One file per season: a snapshot for every date from the end of the regular
+# season on, with seeds, series so far, and the chance to get past each round
+# (last = title odds). Same schema as LOBO's.
+def _playoff_odds_json():
+    rt = df.set_index(['date', 'name'])
+    seasons_out = []
+    for season in sorted(_brackets, reverse=True):
+        names, short = playoff_sim.round_names(season)
+        n_rounds = len(names)
+        enter = playoff_sim.entry_rounds(season)
+        po = _playoff_odds[_playoff_odds['season'] == season].set_index(['date', 'team'])
+        sg = _sim_games[(_sim_games['season'] == season) & _sim_games['home_pts'].notna()]
+        snaps = []
+        for d, (seeds, matchups, n_sims) in sorted(_brackets[season].items()):
+            d_date = d.date() if hasattr(d, 'date') else d
+            series = {}
+            for rnd, bo, ta, tb, wins, decided in matchups:
+                for me, opp in ((ta, tb), (tb, ta)):
+                    w = wins.count(me); l = len(wins) - w
+                    series.setdefault(me, []).append({
+                        'round': short[rnd - 1], 'opp': opp, 'w': w, 'l': l, 'best_of': bo,
+                        'done': decided is not None, 'won': decided == me})
+            teams = []
+            for team, seed in seeds.items():
+                if seed not in enter or (d_date, team) not in po.index:
+                    continue
+                pr = po.loc[(d_date, team)]
+                adv = [float(pr[f'r{k}']) for k in range(2, n_rounds + 1)] + [float(pr['champ'])]
+                r = rt.loc[(d_date, team)]
+                ser = series.get(team, [])
+                teams.append({
+                    'team': team, 'seed': seed, 'enter': int(enter[seed]),
+                    'rating': round(float(r['rating']), 2), 'rank': int(r['rank']),
+                    'rating_o': round(float(r['rating_o']), 2), 'rank_o': int(r['rank_o']),
+                    'rating_d': round(float(r['rating_d']), 2), 'rank_d': int(r['rank_d']),
+                    'adv': [round(x, 4) for x in adv],
+                    'eliminated': any(x['done'] and not x['won'] for x in ser),
+                    'series': ser,
+                })
+            day = sg[sg['date'] == pd.Timestamp(d_date)]
+            played = [x for x in matchups if x[4]]
+            if any(t['adv'][-1] >= 1.0 for t in teams):
+                stage = 'Champion'
+            elif not played:
+                stage = 'Before playoffs'
+            else:
+                live = [x for x in matchups if x[5] is None]
+                stage = names[min(x[0] for x in live) - 1] if live else names[max(x[0] for x in played) - 1]
+            snaps.append({
+                'date': str(d_date), 'stage': stage, 'n_sims': int(n_sims),
+                'results': [{'home': x.home, 'away': x.away, 'hp': int(x.home_pts), 'vp': int(x.visitor_pts)}
+                            for x in day.itertuples(index=False)] if played else [],
+                'teams': teams,
+            })
+        seasons_out.append({'season': int(season), 'rounds': names, 'rounds_short': short,
+                            'snapshots': snaps})
+    return {'n_sims': playoff_sim.N_SIMS, 'current_season': int(_cur_season),
+            'seasons': seasons_out}
+
 
 # Per-snapshot rank (1 = highest odds among alive teams)
 _title_odds_rank_cache = {}
@@ -1160,6 +929,17 @@ for entry in reversed(champions):
 
 with open('docs/data/champions.json', 'w') as f:
     json.dump({'NBA': champions}, f, separators=(',', ':'))
+
+# Split per season so the page loads only the season it shows.
+print("Writing playoff_odds/...")
+os.makedirs('docs/data/playoff_odds', exist_ok=True)
+_po = _playoff_odds_json()
+for _s in _po['seasons']:
+    with open(f"docs/data/playoff_odds/{_s['season']}.json", 'w') as f:
+        json.dump(_s, f, separators=(',', ':'))
+with open('docs/data/playoff_odds/index.json', 'w') as f:
+    json.dump({'n_sims': _po['n_sims'], 'current_season': _po['current_season'],
+               'seasons': [_s['season'] for _s in _po['seasons']]}, f, separators=(',', ':'))
 
 print(f"Done. {len(teams_index)} teams, {len(standings_data['teams'])} in current standings.")
 print(f"Wrote {len(all_seasons)} season files. Standings date: {latest_date}")
