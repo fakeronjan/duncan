@@ -268,17 +268,26 @@ class SeasonSim:
             G += (Hm + Am).sum(0)
         pct = W / np.maximum(G, 1)
         static = self._static_tiebreak(done) if rest.empty else np.zeros(T)
-        tieb = np.tile(static, (n_sims, 1)) + rng.random((n_sims, T)) * 1e-6
+        noise = rng.random((n_sims, T))   # drawn either way: keeps the RNG stream fixed
         sim_ix = np.arange(n_sims)
+        # Once the regular season is over every sim has the same final table,
+        # so seed one row and broadcast it (the full-width sort was ~75% of
+        # the post-season cost).
+        S = 1 if rest.empty else n_sims
+        pct_s = pct[:S]
+        # Single sortable key per team: win% first, then the tiebreak order
+        # (static rank + coin flip), scaled below the smallest possible win%
+        # gap (~1/(75*75) in 2020) so it only ever splits exact ties.
+        srank = np.unique(static, return_inverse=True)[1].astype(float)  # equal until broken
+        tie_term = (srank[None, :] + noise[:S]) * 1e-8
 
         def ranked(members, bonus=None):
             m = np.array(members)
-            k = len(m)
-            keys = [(-tieb[:, m]).ravel(), (-pct[:, m]).ravel()]
+            key = pct_s[:, m] + tie_term[:, m]
             if bonus is not None:
-                keys.append((-bonus).ravel())
-            order = np.lexsort(keys + [np.repeat(sim_ix, k)])
-            return m[order.reshape(n_sims, k) % k]
+                key = key + bonus * 10.0
+            order = np.argsort(-key, axis=1, kind='stable')
+            return m[order]
 
         rule = division_rule(self.season)
         by_conf = {}
@@ -287,23 +296,28 @@ class SeasonSim:
             order = ranked(m)
             if rule:
                 # Division winner = best-placed division member by record.
-                pos = np.empty((n_sims, T), dtype=int)
-                pos[sim_ix[:, None], order] = np.arange(len(m))[None, :]
-                bonus = np.zeros((n_sims, len(m)))
+                six = np.arange(S)
+                pos = np.empty((S, T), dtype=int)
+                pos[six[:, None], order] = np.arange(len(m))[None, :]
+                bonus = np.zeros((S, len(m)))
                 col = np.full(T, -1); col[m] = np.arange(len(m))
                 for dv in np.unique(self.div[m]):
                     mem = m[self.div[m] == dv]
                     win = mem[np.argmin(pos[:, mem], axis=1)]
-                    bonus[sim_ix, col[win]] = 1
+                    bonus[six, col[win]] = 1
                 if rule == 'top4':
                     # Plus the best non-division-winner.
                     nonw = np.where(bonus == 0, pos[:, m], 10**6)
-                    bonus[sim_ix, np.argmin(nonw, axis=1)] = 1
+                    bonus[six, np.argmin(nonw, axis=1)] = 1
                 order = ranked(m, bonus)
             by_conf[c] = order
         lg_all = ranked(range(T))
-        lg_rank = np.empty((n_sims, T), dtype=int)
-        lg_rank[sim_ix[:, None], lg_all] = np.arange(T)[None, :]
+        lg_rank = np.empty((S, T), dtype=int)
+        lg_rank[np.arange(S)[:, None], lg_all] = np.arange(T)[None, :]
+        if S == 1:
+            by_conf = {c: np.broadcast_to(v, (n_sims, v.shape[1])) for c, v in by_conf.items()}
+            lg_all = np.broadcast_to(lg_all, (n_sims, T))
+            lg_rank = np.broadcast_to(lg_rank, (n_sims, T))
 
         ps_by_pair = {}
         for r in self.ps[self.ps['date'] <= d].itertuples(index=False):
