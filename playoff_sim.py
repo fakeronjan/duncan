@@ -37,6 +37,13 @@ ERA_PARAMS = [
     (2021, 0.0726, 2.05),
 ]
 BUBBLE_START = pd.Timestamp('2020-07-30')
+# Ratings aren't fixed for the rest of the season: each simulation gives
+# every team a random rating offset for the remaining games, SD =
+# DRIFT_SD0 * (share of regular season left)**DRIFT_K, fit to how far this
+# league's ratings actually moved from each date to the end of the regular
+# season. Zero once the regular season is over. (Same fix as DILLON: fixed
+# ratings made early-season odds overconfident.)
+DRIFT_SD0, DRIFT_K = 3.90, 0.63
 
 # Standings ties the NBA broke differently from our rule-based tiebreak
 # (older eras used other rules, including coin flips; multi-team ties are
@@ -254,13 +261,16 @@ class SeasonSim:
 
         played = self.rs['home_pts'].notna() & (self.rs['date'] <= d)
         done, rest = self.rs[played], self.rs[~played]
+        frac_left = len(rest) / max(len(self.rs), 1)
+        sd = DRIFT_SD0 * frac_left ** DRIFT_K if frac_left > 0 else 0.0
+        E = rng.normal(0.0, sd, (n_sims, T)) if sd > 0 else None   # per-sim rating offsets
         w0 = np.zeros(T); g0 = np.zeros(T)
         for h, a, hpt, vpt in done[['h', 'a', 'home_pts', 'visitor_pts']].itertuples(index=False):
             g0[h] += 1; g0[a] += 1; w0[h if hpt > vpt else a] += 1
         W = np.tile(w0, (n_sims, 1)); G = np.tile(g0, (n_sims, 1))
         if len(rest):
             h = rest['h'].to_numpy(); a = rest['a'].to_numpy()
-            ph = ndtr(A * (R[h] - R[a] + rest['hp'].to_numpy()))
+            ph = ndtr(A * (R[h] - R[a] + rest['hp'].to_numpy() + (0.0 if E is None else E[:, h] - E[:, a])))
             hw = (rng.random((n_sims, len(rest))) < ph).astype(np.float32)
             Hm = np.zeros((len(rest), T), np.float32); Hm[np.arange(len(rest)), h] = 1
             Am = np.zeros((len(rest), T), np.float32); Am[np.arange(len(rest)), a] = 1
@@ -353,7 +363,8 @@ class SeasonSim:
             a_better = lg_rank[sim_ix, a] < lg_rank[sim_ix, b]
             fixed = np.all(a == a[0]) and np.all(b == b[0])
             actual = ps_by_pair.get(frozenset((self.teams[a[0]], self.teams[b[0]])), []) if fixed else []
-            p_a = lambda edge: ndtr(A * (R[a] - R[b] + edge))
+            off = 0.0 if E is None else E[sim_ix, a] - E[sim_ix, b]
+            p_a = lambda edge: ndtr(A * (R[a] - R[b] + off + edge))
             if kind == 'pi2020':
                 # a = 8 seed (one win needed), b = 9 seed (two wins needed);
                 # skipped entirely if the 9 seed finished more than 4 games back.
