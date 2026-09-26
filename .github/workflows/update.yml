@@ -31,15 +31,16 @@ jobs:
       # re-committed daily as big uncompressed CSVs that rewrite most rows every
       # run (ratings shift), so git could barely delta them - ~40MB/day of bloat.
       # They now live in the Actions cache. A miss (first run / eviction) is safe:
-      # duncan.py rebuilds from scratch (try/except FileNotFoundError).
+      # duncan.py rebuilds from scratch (try/except FileNotFoundError). Prefix
+      # bumped (neu = neutral sites) to force a full rebuild after an engine change.
       - name: Restore ratings caches
         uses: actions/cache/restore@v4
         with:
           path: |
             duncan_ratings.csv
             daily_standings.csv
-          key: duncan-caches-${{ github.run_id }}
-          restore-keys: duncan-caches-
+          key: duncan-caches-neu-${{ github.run_id }}
+          restore-keys: duncan-caches-neu-
 
       - name: Run ratings engine
         run: python duncan.py
@@ -50,7 +51,7 @@ jobs:
           path: |
             duncan_ratings.csv
             daily_standings.csv
-          key: duncan-caches-${{ github.run_id }}
+          key: duncan-caches-neu-${{ github.run_id }}
 
       # title_odds_cache/ holds per-season Monte Carlo results (playoff_sim.py).
       # Each season is fingerprinted by engine code + its games + ratings, so a

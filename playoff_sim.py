@@ -9,7 +9,7 @@ Game model (probit on 58,577 NBA games 1977-2026, pre-game snapshot
 ratings, fit by log loss per era):
     P(home win) = Phi(A * (rating_home - rating_away + home_pts))
 Both A and home court drifted, so they're per era (see ERA_PARAMS). The
-2020 bubble (games from 2020-07-30) is neutral.
+2020 bubble (games from 2020-07-30) and other neutral-site games get no home edge.
 
 Output per (snapshot, team): probability of reaching the playoff bracket,
 each later round, and the title (the Title odds column).
@@ -181,7 +181,10 @@ class SeasonSim:
         self.div = np.array([div_of(t, season) for t in self.teams])
         self.A, self.hp = era_params(season)
         rs = rs.assign(h=rs['home'].map(self.idx), a=rs['away'].map(self.idx))
-        rs['hp'] = np.where((season == 2020) & (rs['date'] >= BUBBLE_START), 0.0, self.hp)
+        neutral = (season == 2020) & (rs['date'] >= BUBBLE_START)
+        if 'is_neutral' in rs.columns:
+            neutral = neutral | (rs['is_neutral'].fillna(0) == 1)
+        rs['hp'] = np.where(neutral, 0.0, self.hp)
         self.rs = rs
         self.hp_ps = 0.0 if season == 2020 else self.hp
         self.ps = g[~g['is_rs'] & g['home_pts'].notna()].copy()

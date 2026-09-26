@@ -339,7 +339,9 @@ if 'is_nba_cup_final' in _sim_games.columns:
     _sim_games = _sim_games[_sim_games['is_nba_cup_final'] != 1]  # not a standings game
 _sim_games = _sim_games.rename(columns={'date_game': 'date', 'home_team_name': 'home',
                                         'visitor_team_name': 'away'})
-_sim_games = _sim_games[['season', 'date', 'home', 'away', 'home_pts', 'visitor_pts']].copy()
+if 'is_neutral' not in _sim_games.columns:
+    _sim_games['is_neutral'] = 0
+_sim_games = _sim_games[['season', 'date', 'home', 'away', 'home_pts', 'visitor_pts', 'is_neutral']].copy()
 _sim_games['date'] = pd.to_datetime(_sim_games['date'])
 # Current season's remaining schedule: basketball-reference's unplayed rows.
 # Unplayed rows dated before the latest played game are stale postponements.
@@ -350,12 +352,13 @@ if not _sched.empty:
     _sched['date'] = pd.to_datetime(_sched['date_game'], format='%a, %b %d, %Y')
     _last_played = _sim_games.loc[_sim_games['season'] == _cur_season, 'date'].max()
     _sched = _sched[_sched['date'] >= _last_played]
-    from duncan import TEAM_ALIASES
+    from duncan import TEAM_ALIASES, neutral_flags
     _sim_games = pd.concat([_sim_games, pd.DataFrame({
         'season': _cur_season, 'date': _sched['date'],
         'home': _sched['home_team_name'].replace(TEAM_ALIASES),
         'away': _sched['visitor_team_name'].replace(TEAM_ALIASES),
-        'home_pts': np.nan, 'visitor_pts': np.nan})], ignore_index=True)
+        'home_pts': np.nan, 'visitor_pts': np.nan,
+        'is_neutral': neutral_flags(_sched).to_numpy()})], ignore_index=True)
 
 _sim_ratings = df[['season', 'date', 'name', 'rating']].copy()
 _sim_ratings['date'] = pd.to_datetime(_sim_ratings['date'])

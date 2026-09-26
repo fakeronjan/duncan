@@ -165,12 +165,39 @@ def scrape_games(min_season, max_season, existing_df):
 # GAME DATA PREPARATION
 # =========================================================
 
+# Neutral sites, matched against basketball-reference's game remarks ("at
+# London, England") and arena names: games abroad, Las Vegas (the Jazz's
+# 1984-85 games there, the NBA Cup knockouts) and other out-of-market one-offs.
+# In-market secondary homes (Celtics in Hartford, Clippers in Anaheim, Sonics
+# in Tacoma, Spurs in Austin) stay home games.
+NEUTRAL_SITES = ('London', 'Mexico City', 'Paris', 'Tokyo', 'Saitama', 'Yokohama',
+                 'The O2 Arena', 'AccorHotels Arena', 'Uber Arena', 'Las Vegas',
+                 'T-Mobile Arena', 'Charlotte, NC', 'St. Louis, MO', 'Freedom Hall')
+NEUTRAL_SITE_TEAMS = {('at New Orleans, LA', 'Atlanta Hawks'),
+                      ('Louisiana Superdome', 'Washington Bullets'),
+                      ('Market Square Arena', 'San Diego Clippers')}
+BUBBLE_START = pd.Timestamp('2020-07-30')   # 2020 restart in Orlando
+
+
+def neutral_flags(raw_df):
+    """1 for a neutral-site game. raw_df: loaded_nba_games.csv rows."""
+    site = (raw_df.get('game_remarks', pd.Series('', index=raw_df.index)).fillna('').astype(str) + ' | ' +
+            raw_df.get('arena_name', pd.Series('', index=raw_df.index)).fillna('').astype(str))
+    neu = site.apply(lambda x: any(k in x for k in NEUTRAL_SITES))
+    for key, team in NEUTRAL_SITE_TEAMS:
+        neu |= site.str.contains(key, regex=False) & (raw_df['home_team_name'] == team)
+    date = pd.to_datetime(raw_df['date_game'], format='%a, %b %d, %Y')
+    neu |= (raw_df['season'] == 2020) & (date >= BUBBLE_START)
+    return neu.astype(int)
+
+
 def prepare_game_data(raw_df):
     """
     Clean and enrich the raw games DataFrame with margins, win flags,
     adjusted scores, date IDs, and result strings.
     """
     df = raw_df[['season', 'date_game', 'visitor_team_name', 'visitor_pts', 'home_team_name', 'home_pts']].copy()
+    df['is_neutral'] = neutral_flags(raw_df)
 
     df['visitor_pts'] = pd.to_numeric(df['visitor_pts'])
     df['home_pts'] = pd.to_numeric(df['home_pts'])
@@ -246,6 +273,12 @@ def _apply_margin_transform(margin, transform, cap):
     raise ValueError(f"Unknown MARGIN_TRANSFORM: {transform}")
 
 
+def _neutral_mask(df):
+    if 'is_neutral' not in df.columns:
+        return np.zeros(len(df), dtype=bool)
+    return df['is_neutral'].fillna(0).to_numpy().astype(bool)
+
+
 def _solve_wls_od(window_df, hca, weighting_mode, hca_off_share=0.5):
     """
     Solve for team OFFENSIVE + DEFENSIVE WLS ratings.
@@ -280,6 +313,8 @@ def _solve_wls_od(window_df, hca, weighting_mode, hca_off_share=0.5):
     home_names    = window_df["home_team_name"].to_numpy()
     visitor_names = window_df["visitor_team_name"].to_numpy()
 
+    hca_g = np.where(_neutral_mask(window_df), 0.0, hca)   # neutral site: no home edge
+
     mu = (home_pts.sum() + visitor_pts.sum()) / (2 * n_games)
     h_off_share = float(hca_off_share)
     h_def_share = 1.0 - h_off_share
@@ -295,11 +330,11 @@ def _solve_wls_od(window_df, hca, weighting_mode, hca_off_share=0.5):
         # home_O - visitor_D = home_pts - mu - hca*h_off_share
         X[2*i,     h_idx]            = 1.0
         X[2*i,     n_teams + v_idx]  = -1.0
-        y_home = home_pts[i] - mu - hca * h_off_share
+        y_home = home_pts[i] - mu - hca_g[i] * h_off_share
         # visitor_O - home_D = visitor_pts - mu + hca*h_def_share
         X[2*i + 1, v_idx]            = 1.0
         X[2*i + 1, n_teams + h_idx]  = -1.0
-        y_vis  = visitor_pts[i] - mu + hca * h_def_share
+        y_vis  = visitor_pts[i] - mu + hca_g[i] * h_def_share
 
         if weighting_mode == "wls":
             y[2*i]     = y_home
@@ -363,7 +398,7 @@ def _solve_wls(window_df, hca, weighting_mode, margin_transform, margin_cap):
     home_names = window_df["home_team_name"].to_numpy()
     visitor_names = window_df["visitor_team_name"].to_numpy()
 
-    raw_margin = home_pts - visitor_pts - hca
+    raw_margin = home_pts - visitor_pts - np.where(_neutral_mask(window_df), 0.0, hca)
     transformed = _apply_margin_transform(raw_margin, margin_transform, margin_cap)
 
     for i in range(n_games):
