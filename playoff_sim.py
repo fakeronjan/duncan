@@ -18,11 +18,7 @@ import numpy as np
 import pandas as pd
 from scipy.special import ndtr
 
-# Simulation counts (fleet standard): regular-season dates 10k; once the
-# regular season is over, 100k (10k left a visible ~1-point day-to-day
-# wobble in the playoff grid; 100k is ~0.1 pt).
-N_SIMS = 10_000
-N_SIMS_PLAYOFFS = 100_000
+N_SIMS = 10_000            # every snapshot, playoffs included (fleet standard since 2026-10-02)
 # Large runs go in chunks (like MESSI's 200k): a single 1M-sim call builds
 # several multi-GB arrays for a 30-team league, and the first full build
 # lost its 2026 worker running ten of those in parallel.
@@ -435,8 +431,6 @@ def compute(games, ratings_df, rs_games_by_season, conf_of, div_of, current_seas
                         rs_end_by_season.get(season))
         for d in sorted(ratings):
             n = N_SIMS
-            if sim.rs_over(d):
-                n = N_SIMS_PLAYOFFS
             o = sim.odds_at(d, n_sims=n)
             if sim.rs_complete:
                 brackets.setdefault(season, {})[d] = (dict(sim.seeds), list(sim.matchups), n)
