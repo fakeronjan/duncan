@@ -1069,5 +1069,31 @@
    "Sacramento Kings",
    "Dallas Mavericks"
   ]
+ },
+ "2026": {
+  "East": [
+   "Detroit Pistons",
+   "Boston Celtics",
+   "New York Knicks",
+   "Cleveland Cavaliers",
+   "Toronto Raptors",
+   "Atlanta Hawks",
+   "Philadelphia 76ers",
+   "Orlando Magic",
+   "Charlotte Hornets",
+   "Miami Heat"
+  ],
+  "West": [
+   "Oklahoma City Thunder",
+   "San Antonio Spurs",
+   "Denver Nuggets",
+   "Los Angeles Lakers",
+   "Houston Rockets",
+   "Minnesota Timberwolves",
+   "Phoenix Suns",
+   "Portland Trail Blazers",
+   "Los Angeles Clippers",
+   "Golden State Warriors"
+  ]
  }
 }
