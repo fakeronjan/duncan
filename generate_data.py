@@ -25,6 +25,15 @@ df['date'] = pd.to_datetime(df['date']).dt.date
 games = pd.read_csv('all_nba_games.csv')
 games['date_game'] = pd.to_datetime(games['date_game']).dt.date
 
+# Refuse to build from stale ratings. The ratings file isn't in git (it comes
+# from the ratings engine, cached in Actions), so a run on a machine with an old
+# copy would publish old ratings: on 2026-10-02 a local run cut 2026 off at July 8.
+_last_game = pd.to_datetime(games.loc[games["home_pts"].notna(), "date_game"]).max()
+_last_rating = pd.to_datetime(df["date"]).max()
+if _last_game - _last_rating > pd.Timedelta(days=3):
+    raise SystemExit(f"Ratings end {_last_rating.date()} but games run through {_last_game.date()}: "
+                     f"the ratings file is stale. Run the ratings engine first.")
+
 
 # ── NBA conference mapping (covers all team names since 1980) ────────────────
 TEAM_CONFERENCE = {
