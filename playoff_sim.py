@@ -285,6 +285,11 @@ class SeasonSim:
             Am = np.zeros((len(rest), T), np.float32); Am[np.arange(len(rest)), a] = 1
             W += hw @ Hm + (1 - hw) @ Am
             G += (Hm + Am).sum(0)
+        # Projected record (Standings' Proj Record bar): 20th/50th/80th
+        # percentile of simulated final wins while games remain. Actual
+        # simulated values; draws no random numbers.
+        proj = ((np.quantile(W, [0.2, 0.5, 0.8], axis=0, method='inverted_cdf'), G[0])
+                if len(rest) else None)
         pct = W / np.maximum(G, 1)
         static = self._static_tiebreak(done) if rest.empty else np.zeros(T)
         noise = rng.random((n_sims, T))   # drawn either way: keeps the RNG stream fixed
@@ -433,7 +438,10 @@ class SeasonSim:
         reach /= n_sims
         cols = ['playoffs'] + [f'r{k}' for k in range(2, self.n_rounds + 1)] + ['champ']
         rows = np.vstack([reach[0]] + [reach[k] for k in range(2, self.n_rounds + 1)] + [reach[-1]])
-        return pd.DataFrame(rows.T, index=self.teams, columns=cols)
+        out = pd.DataFrame(rows.T, index=self.teams, columns=cols)
+        if proj is not None:
+            (out['proj_w20'], out['proj_w50'], out['proj_w80']), out['proj_games'] = proj
+        return out
 
 
 def compute(games, ratings_df, rs_games_by_season, conf_of, div_of, current_season,

@@ -462,6 +462,42 @@ for rid, pairs in _to_pairs_by_rid.items():
 
 print(f"  Title odds cached for {len(_title_odds_cache):,} (snapshot, team) pairs")
 
+# Playoff odds (Standings / Team Summary "Playoff / Title Odds"): the share of
+# sims reaching the first round proper. From 2020 the sim's 'playoffs' also
+# counts play-in teams, so it's 'r2' (reaching the round after the play-in).
+_po_odds_cache = {}
+for rid, season_, team, p0, p2 in _playoff_odds[['ranking_id', 'season', 'team', 'playoffs', 'r2']].itertuples(index=False):
+    p = p2 if int(season_) >= 2020 else p0
+    if p > 0 and not pd.isna(rid):
+        _po_odds_cache[(int(rid), team)] = float(p)
+_po_odds_rank_cache = {}
+for rid, pairs in pd.Series(_po_odds_cache).groupby(level=0):
+    order = pairs.sort_values(ascending=False)
+    rank_map, prev, prev_rank = {}, None, 0
+    for i, ((_, team), v) in enumerate(order.items(), start=1):
+        if v != prev:
+            prev_rank, prev = i, v
+        rank_map[team] = prev_rank
+    _po_odds_rank_cache[rid] = rank_map
+
+# Projected record (Standings' Proj Record bar), while the regular season is going.
+_proj_cache = {}
+if 'proj_w50' in _playoff_odds.columns:
+    for rid, team, a, b, c, gms in _playoff_odds[['ranking_id', 'team', 'proj_w20', 'proj_w50', 'proj_w80',
+                                                   'proj_games']].itertuples(index=False):
+        if not pd.isna(b) and not pd.isna(rid):
+            _proj_cache[(int(rid), team)] = {'proj': [int(a), int(b), int(c)], 'proj_games': int(gms)}
+
+
+def _po_fields(ranking_id, team):
+    rm = _po_odds_rank_cache.get(int(ranking_id))
+    return {'playoff_odds': _po_odds_cache.get((int(ranking_id), team)),
+            'playoff_odds_rank': rm.get(team) if rm else None}
+
+
+def _proj(ranking_id, team):
+    return _proj_cache.get((int(ranking_id), team), {})
+
 
 def _title_odds_val(ranking_id, team):
     return _title_odds_cache.get((int(ranking_id), team))
@@ -490,6 +526,8 @@ standings_data = {
             **_od_fields(r),
             'title_odds':      _title_odds_val(r['ranking_id'], r['name']),
             'title_odds_rank': _title_odds_rk(r['ranking_id'], r['name']),
+            **_po_fields(r['ranking_id'], r['name']),
+            **_proj(r['ranking_id'], r['name']),
             'record':          clean(r['record']),
             'last_match':      era_aware_last_match(clean(r['last_game_result']) if _played(r['last_game_result']) else last_game_as_of(r['name'], str(r['date']), r['season']), r['season']),
             'last_match_is_cup': int(r['last_game_is_cup']) if _played(r['last_game_result']) else last_game_is_cup_as_of(r['name'], str(r['date']), r['season']),
@@ -643,6 +681,7 @@ for team in all_teams:
                 **_od_fields(r),
                 'title_odds':        _title_odds_val(r['ranking_id'], team),
                 'title_odds_rank':   _title_odds_rk(r['ranking_id'], team),
+                **_po_fields(r['ranking_id'], team),
                 'record':            clean(r['record']),
                 'regular_record':    reg,
                 'playoff_record':    po,
@@ -703,6 +742,8 @@ for season in all_seasons:
                 **_od_fields(r),
                 'title_odds':      _title_odds_val(r['ranking_id'], r['name']),
                 'title_odds_rank': _title_odds_rk(r['ranking_id'], r['name']),
+                **_po_fields(r['ranking_id'], r['name']),
+                **_proj(r['ranking_id'], r['name']),
                 'record':          clean(r['record']),
                 'regular_record':  reg,
                 'playoff_record':  po,
