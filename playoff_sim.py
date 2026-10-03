@@ -53,6 +53,16 @@ TIEBREAK_WINNERS = ({int(k): v for k, v in _json.load(open(_TB)).items()}
                     if _os.path.exists(_TB) else {})
 
 
+# The real playoff seeds: {season: {conf: [seed 1, seed 2, ...]}}, play-in
+# era 1-10 (7-10 from the play-in games: 7 hosts 8, 9 hosts 10). Once the
+# regular season is over these ARE the seeds; the sim's tiebreak can swap
+# tied teams (2010 Nuggets/Jazz, 2016 Heat/Hornets, 2017 Clippers/Jazz).
+# From Wikipedia's playoff brackets; duncan.py adds each new season.
+_SEEDS = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'nba_playoff_seeds.json')
+REAL_SEEDS = ({int(k): v for k, v in _json.load(open(_SEEDS)).items()}
+              if _os.path.exists(_SEEDS) else {})
+
+
 def era_params(season):
     a, h = ERA_PARAMS[0][1:]
     for start, aa, hh in ERA_PARAMS:
@@ -320,6 +330,10 @@ class SeasonSim:
                     bonus[six, np.argmin(nonw, axis=1)] = 1
                 order = ranked(m, bonus)
             by_conf[c] = order
+        if rest.empty and self.season in REAL_SEEDS:
+            for c, real in REAL_SEEDS[self.season].items():
+                top = [self.idx[t] for t in real]
+                by_conf[c] = np.array([top + [t for t in by_conf[c][0] if t not in top]])
         lg_all = ranked(range(T))
         lg_rank = np.empty((S, T), dtype=int)
         lg_rank[np.arange(S)[:, None], lg_all] = np.arange(T)[None, :]
@@ -331,6 +345,14 @@ class SeasonSim:
         ps_by_pair = {}
         for r in self.ps[self.ps['date'] <= d].itertuples(index=False):
             ps_by_pair.setdefault(frozenset((r.home, r.away)), []).append(r.winner)
+
+        # Who had home court in each real series: Game 1's host (set by the
+        # standings before the series, not by its result). The sim's own
+        # rule (better record) can miss on tiebreaks and old-era rules.
+        first_host = {}
+        for r in self.ps.itertuples(index=False):
+            first_host.setdefault(frozenset((r.home, r.away)), r.home)
+        self.host_miss = 0
 
         self.used_actual = 0
         self.rs_complete = rest.empty
@@ -361,6 +383,11 @@ class SeasonSim:
                 np.add.at(reach[rnd], t, 1)
             a_better = lg_rank[sim_ix, a] < lg_rank[sim_ix, b]
             fixed = np.all(a == a[0]) and np.all(b == b[0])
+            real_host = first_host.get(frozenset((self.teams[a[0]], self.teams[b[0]]))) if fixed else None
+            if real_host is not None and kind != 'pi2020':
+                real_a = real_host == self.teams[a[0]]
+                self.host_miss += self.season != 2020 and bool(a_better[0]) != real_a   # 2020: bubble
+                a_better = np.full(n_sims, real_a)
             actual = ps_by_pair.get(frozenset((self.teams[a[0]], self.teams[b[0]])), []) if fixed else []
             off = 0.0 if E is None else E[sim_ix, a] - E[sim_ix, b]
             p_a = lambda edge: ndtr(A * (R[a] - R[b] + off + edge))
@@ -470,6 +497,7 @@ def _fingerprint(season, games, ratings_df, current_season):
     r = ratings_df[ratings_df['season'] == season].sort_values(['date', 'name']).copy()
     r['rating'] = r['rating'].round(3)
     h.update(r.to_csv(index=False).encode())
+    h.update(repr(REAL_SEEDS.get(season)).encode())     # this season's real seeds only
     return h.hexdigest()
 
 
