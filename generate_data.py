@@ -491,8 +491,8 @@ for rid, pairs in pd.Series(_po_odds_cache).groupby(level=0):
 
 # Projected record (Standings' Proj Record bar), while the regular season is going.
 _proj_cache = {}
-if 'proj_w50' in _playoff_odds.columns:
-    for rid, team, a, b, c, gms in _playoff_odds[['ranking_id', 'team', 'proj_w20', 'proj_w50', 'proj_w80',
+if 'proj_mid' in _playoff_odds.columns:
+    for rid, team, a, b, c, gms in _playoff_odds[['ranking_id', 'team', 'proj_lo', 'proj_mid', 'proj_hi',
                                                    'proj_games']].itertuples(index=False):
         if not pd.isna(b) and not pd.isna(rid):
             _proj_cache[(int(rid), team)] = {'proj': [int(a), int(b), int(c)], 'proj_games': int(gms)}
