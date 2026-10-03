@@ -691,6 +691,7 @@ for team in all_teams:
                 'title_odds':        _title_odds_val(r['ranking_id'], team),
                 'title_odds_rank':   _title_odds_rk(r['ranking_id'], team),
                 **_po_fields(r['ranking_id'], team),
+                **_proj(r['ranking_id'], team),
                 'record':            clean(r['record']),
                 'regular_record':    reg,
                 'playoff_record':    po,
