@@ -253,10 +253,13 @@ class SeasonSim:
             score[self.idx[t]] += 1e6 * (len(order) - k)
         return score
 
-    def odds_at(self, d, n_sims=N_SIMS):
-        """Chunked wrapper: same result shape, bounded memory."""
+    def odds_at(self, d, n_sims=N_SIMS, capture=None):
+        """Chunked wrapper: same result shape, bounded memory. capture: an
+        optional dict filled with per-simulation results (Daily Matchups);
+        needs n_sims <= CHUNK and draws no extra random numbers."""
         if n_sims <= CHUNK:
-            return self._odds_at(d, n_sims, 0)
+            return self._odds_at(d, n_sims, 0, capture)
+        assert capture is None, 'capture needs a single chunk'
         parts, done = [], 0
         k = 0
         while done < n_sims:
@@ -265,7 +268,7 @@ class SeasonSim:
             done += n; k += 1
         return sum(parts) / n_sims
 
-    def _odds_at(self, d, n_sims, chunk):
+    def _odds_at(self, d, n_sims, chunk, capture=None):
         T = len(self.teams)
         rng = np.random.default_rng([int(pd.Timestamp(d).strftime('%Y%m%d')), chunk])
         rt = self.ratings.get(d, {})
@@ -285,6 +288,11 @@ class SeasonSim:
             h = rest['h'].to_numpy(); a = rest['a'].to_numpy()
             ph = ndtr(A * (R[h] - R[a] + rest['hp'].to_numpy() + (0.0 if E is None else E[:, h] - E[:, a])))
             hw = (rng.random((n_sims, len(rest))) < ph).astype(np.float32)
+            if capture is not None:
+                capture['rest'] = rest.reset_index(drop=True)
+                capture['hw'] = hw.astype(bool)
+                capture['E'] = E
+                capture['W'] = W
             Hm = np.zeros((len(rest), T), np.float32); Hm[np.arange(len(rest)), h] = 1
             Am = np.zeros((len(rest), T), np.float32); Am[np.arange(len(rest)), a] = 1
             W += hw @ Hm + (1 - hw) @ Am
@@ -374,7 +382,10 @@ class SeasonSim:
 
         reach = np.zeros((self.n_rounds + 2, T))
         entered = np.zeros((n_sims, T), dtype=bool)
+        in_r2 = np.zeros((n_sims, T), dtype=bool)   # reached the round after round 1 (byes count)
         res, lose = {}, {}
+        if capture is not None:
+            capture['ps_next'] = []   # (team_a, team_b, a's result in each sim, best-of) for each fixed series' next game
 
         def slot(s):
             if s[0] == 'conf':
@@ -390,6 +401,8 @@ class SeasonSim:
                 for k in range(2, rnd):   # a bye counts as getting through
                     np.add.at(reach[k], t[new], 1)
                 np.add.at(reach[rnd], t, 1)
+                if rnd >= 2:
+                    in_r2[sim_ix, t] = True
             a_better = lg_rank[sim_ix, a] < lg_rank[sim_ix, b]
             fixed = np.all(a == a[0]) and np.all(b == b[0])
             real_host = first_host.get(frozenset((self.teams[a[0]], self.teams[b[0]]))) if fixed else None
@@ -411,6 +424,8 @@ class SeasonSim:
                         won = np.full(n_sims, actual[gi] == self.teams[a[0]]); self.used_actual += 1
                     else:
                         won = rng.random(n_sims) < p_a(self.hp_ps)
+                        if capture is not None and fixed and gi == len(actual):
+                            capture['ps_next'].append((self.teams[a[0]], self.teams[b[0]], won & held, 2))
                     live = held & (wa < 1) & (wb < 2)
                     wa += won & live; wb += ~won & live
                 a_wins = ~held | (wa >= 1)
@@ -424,6 +439,8 @@ class SeasonSim:
                     else:
                         a_home = a_better if better_hosts else ~a_better
                         won = rng.random(n_sims) < p_a(np.where(a_home, self.hp_ps, -self.hp_ps))
+                        if capture is not None and fixed and gi == len(actual):
+                            capture['ps_next'].append((self.teams[a[0]], self.teams[b[0]], won, bo))
                     live = (wa < need) & (wb < need)
                     wa += won & live; wb += ~won & live
                 a_wins = wa >= need
@@ -439,6 +456,12 @@ class SeasonSim:
                     decided = ta if na >= kind // 2 + 1 else (tb if nb >= kind // 2 + 1 else None)
                 self.matchups.append((rnd, 2 if kind == 'pi2020' else kind, ta, tb, games_, decided))
         np.add.at(reach[-1], res['F'], 1)
+        if capture is not None:
+            capture['teams'] = self.teams
+            # Playoff odds as the Standings show them: first round proper,
+            # which from 2020 means the round after the play-in.
+            capture['made'] = in_r2 if self.season >= 2020 else entered.copy()
+            capture['champ'] = res['F']
         reach /= n_sims
         cols = ['playoffs'] + [f'r{k}' for k in range(2, self.n_rounds + 1)] + ['champ']
         rows = np.vstack([reach[0]] + [reach[k] for k in range(2, self.n_rounds + 1)] + [reach[-1]])
