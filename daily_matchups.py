@@ -227,6 +227,9 @@ def build_season(season, sim_games, ratings, rs_games, conf_of, div_of, rs_end,
                 if hit is None:
                     continue
                 ta, won_a, best_of = hit
+                sw = series.get(frozenset((h, a)), {})
+                if best_of > 2 and pd.isna(x.home_pts) and max(sw.values(), default=0) >= best_of // 2 + 1:
+                    continue                      # an "if necessary" game after the series ended (2026 Finals Game 6)
                 hw = won_a if ta == h else ~won_a
                 p_home = float(hw.mean())
                 stakes = {}
@@ -237,7 +240,6 @@ def build_season(season, sim_games, ratings, rs_games, conf_of, div_of, rs_end,
                     po_w, po_l = _raw_split(made[:, it], won) if best_of <= 2 else (None, None)
                     stakes['home' if t == h else 'away'] = {
                         'po_win': po_w, 'po_loss': po_l, 'title_win': ti_w, 'title_loss': ti_l}
-                sw = series.get(frozenset((h, a)), {})
                 # best_of 1 = a play-in game; 2 = 2020's 8-vs-9 play-in (the 9 needs two wins)
                 ser = {'home_wins': sw.get(h, 0), 'away_wins': sw.get(a, 0), 'best_of': int(best_of)}
             margin = LINE_LAM * (rh['rating'] - ra['rating'] + hp)
