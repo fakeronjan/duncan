@@ -156,7 +156,13 @@ def scrape_games(min_season, max_season, existing_df):
     combined = combined.sort_values('_sort_pts', na_position='first', kind='mergesort')
     combined = combined.drop_duplicates(
         subset=['date_game', 'home_team_name', 'visitor_team_name'], keep='last'
-    ).drop(columns='_sort_pts').sort_values('season').reset_index(drop=True)
+    ).drop(columns='_sort_pts')
+    # Full key, stable: sorting by season alone with the default (unstable)
+    # sort reshuffled every season's rows each run, rewriting the whole file
+    # daily (2026-10-15).
+    combined['_d'] = pd.to_datetime(combined['date_game'], format='%a, %b %d, %Y', errors='coerce')
+    combined = combined.sort_values(['season', '_d', 'home_team_name', 'visitor_team_name'],
+                                    kind='stable').drop(columns='_d').reset_index(drop=True)
     combined.to_csv('loaded_nba_games.csv', index=False)
     return combined
 
@@ -224,7 +230,9 @@ def prepare_game_data(raw_df):
 
     # Date parsing and sorting
     df['date_game'] = pd.to_datetime(df['date_game'], format='%a, %b %d, %Y')
-    df.sort_values('date_game', inplace=True)
+    # Teams break same-day ties (stable): date alone left same-day order, and
+    # so unique_game_id, different every run (2026-10-15).
+    df.sort_values(['date_game', 'home_team_name', 'visitor_team_name'], kind='stable', inplace=True)
     df.drop_duplicates(keep="first", inplace=True)
 
     # Date and game IDs

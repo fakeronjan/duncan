@@ -170,7 +170,11 @@ class SeasonSim:
         pts = scheduled). Regular season = games on or before rs_end when
         known (completed seasons), else each team's first rs_games_total."""
         self.season = season
-        g = games.sort_values('date', kind='stable').reset_index(drop=True)
+        # Full content key, not just date: the sim draws random numbers in row
+        # order, so same-day games arriving in a different order reshuffled
+        # every snapshot's odds daily (2026-10-15).
+        g = games.sort_values(['date', 'home', 'away', 'home_pts', 'visitor_pts'],
+                              kind='stable', na_position='last').reset_index(drop=True)
         if rs_end is not None:
             g['is_rs'] = g['date'] <= rs_end
         else:
