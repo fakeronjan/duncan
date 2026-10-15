@@ -117,6 +117,26 @@ def build_season(season, sim_games, ratings, rs_games, conf_of, div_of, rs_end,
     snaps = {d: x.set_index('name') for d, x in ratings.groupby('date')}
     cur = sorted(d for d in snaps if ratings.loc[ratings['date'] == d, 'season'].iloc[0] == season)
     prev = sorted(d for d in snaps if d not in set(cur) and d < (cur[0] if cur else pd.Timestamp.max))
+    # New teams (expansion / relocation): ratings blended toward a starting
+    # point over their first games, as the title-odds sim does.
+    priors = playoff_sim.new_team_priors(season, ratings)
+    played_g = g[g['home_pts'].notna()]
+
+    def steady(snap, d):
+        snap = snap.copy()
+        for t, prior in priors.items():
+            n = int(((played_g['home'] == t) | (played_g['away'] == t))[played_g['date'] <= d].sum())
+            w = playoff_sim.new_team_weight(n)
+            if t in snap.index:
+                raw = snap.loc[t, ['rating', 'rating_o', 'rating_d']].astype(float)
+                snap.loc[t, 'rating'] = w * raw['rating'] + (1 - w) * prior
+                snap.loc[t, 'rating_o'] = w * raw['rating_o'] + (1 - w) * prior / 2
+                snap.loc[t, 'rating_d'] = w * raw['rating_d'] + (1 - w) * prior / 2
+            else:                                     # not rated yet (opening-night preview)
+                snap.loc[t, ['rating', 'rating_o', 'rating_d', 'rank']] = [prior, prior / 2, prior / 2, np.nan]
+        return snap
+    cur_set = set(cur)
+    snaps = {d: (steady(x, d) if d in cur_set else x) for d, x in snaps.items()}
     sim_ratings = {d: dict(zip(snaps[d].index, snaps[d]['rating'])) for d in cur}
     sim = playoff_sim.SeasonSim(season, g, rs_games, conf_of, div_of, sim_ratings, rs_end)
     rs_keys = set(zip(sim.rs['date'], sim.rs['home'], sim.rs['away']))
@@ -136,6 +156,7 @@ def build_season(season, sim_games, ratings, rs_games, conf_of, div_of, rs_end,
             snap_d = before[-1]
         elif prev:
             snap_d = prev[-1]                         # opening night(s): last season's final ratings
+            snaps[snap_d] = steady(snaps[snap_d], snap_d)   # + any new team at its starting point
             sim.ratings[snap_d] = dict(zip(snaps[snap_d].index, snaps[snap_d]['rating']))
         else:
             continue                                  # 1977: no ratings yet

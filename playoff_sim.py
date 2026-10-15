@@ -40,6 +40,67 @@ BUBBLE_START = pd.Timestamp('2020-07-30')
 # season. Zero once the regular season is over. (Same fix as DILLON: fixed
 # ratings made early-season odds overconfident.)
 DRIFT_SD0, DRIFT_K = 3.90, 0.63
+# Offseason uncertainty (2026-10-15): early-season odds ran overconfident at
+# the edges (1978-2026, first night: 95-99% teams made it 92% of the time,
+# under-5% teams 6%), because ratings going into a season still carry last
+# season's games and miss trades, free agency, injuries and aging. Extra
+# per-team SD of PRESEASON_SD on opening day, fading linearly to zero over
+# PRESEASON_DAYS (a month by Ronjan's call: old games stay in the ratings a
+# while), combined with the drift above in quadrature.
+PRESEASON_SD, PRESEASON_DAYS = 4.0, 30   # 4.0: best early-season log loss of 0-8 (3-4 tie overall)
+
+# New teams (2026-10-15): a name the ratings engine hasn't seen starts from
+# nothing, so one game set its rating (1996 Grizzlies +13.8 and No. 1 after
+# an opening win, 99.9% playoff odds; 1989 Heat -30.5). For a team in its
+# first season under a name, blend its rating with a starting point over its
+# first NEW_TEAM_GAMES games: the predecessor's last rating for a relocation,
+# EXPANSION_PRIOR for an expansion team (the mean first-season final rating
+# of the seven since 1977: Mavericks, Hornets, Heat, Timberwolves, Magic,
+# Raptors, Grizzlies). Charlotte 2005 (the Bobcats) counts as expansion.
+RELOCATED_FROM = {
+    'New Jersey Nets': 'New York Nets', 'San Diego Clippers': 'Buffalo Braves',
+    'Utah Jazz': 'New Orleans Jazz', 'Los Angeles Clippers': 'San Diego Clippers',
+    'Sacramento Kings': 'Kansas City Kings', 'Memphis Grizzlies': 'Vancouver Grizzlies',
+    'New Orleans Pelicans': 'Charlotte Hornets', 'Oklahoma City Thunder': 'Seattle SuperSonics',
+    'Brooklyn Nets': 'New Jersey Nets',
+}
+EXPANSION_PRIOR = -7.7
+NEW_TEAM_GAMES = 30
+
+
+def new_team_priors(season, ratings_df):
+    """{team: starting rating} for teams rated this season but not last.
+    ratings_df: (season, date, name, rating) covering at least last season."""
+    prev = ratings_df[ratings_df['season'] == season - 1]
+    cur = ratings_df[ratings_df['season'] == season]
+    new = set(cur['name']) - set(prev['name'])
+    out = {}
+    for t in new:
+        src = prev[prev['name'] == RELOCATED_FROM.get(t, '')]
+        out[t] = float(src.sort_values('date')['rating'].iloc[-1]) if len(src) else EXPANSION_PRIOR
+    return out
+
+
+def new_team_weight(n_games):
+    return min(n_games / NEW_TEAM_GAMES, 1.0)
+
+
+def steady_new_teams(ratings, games, priors):
+    """ratings: {date: {team: rating}}. Blends each new team's rating toward
+    its prior by games played (games: the season's games) up to that date."""
+    if not priors:
+        return ratings
+    played = games[games['home_pts'].notna()]
+    out = {}
+    for d, day in ratings.items():
+        day = dict(day)
+        for t, prior in priors.items():
+            if t in day:
+                n = int(((played['home'] == t) | (played['away'] == t))[played['date'] <= d].sum())
+                w = new_team_weight(n)
+                day[t] = w * day[t] + (1 - w) * prior
+        out[d] = day
+    return out
 
 # Standings ties the NBA broke differently from our rule-based tiebreak
 # (older eras used other rules, including coin flips; multi-team ties are
@@ -279,6 +340,10 @@ class SeasonSim:
         done, rest = self.rs[played], self.rs[~played]
         frac_left = len(rest) / max(len(self.rs), 1)
         sd = DRIFT_SD0 * frac_left ** DRIFT_K if frac_left > 0 else 0.0
+        if sd > 0 and PRESEASON_SD > 0:
+            days_in = max((pd.Timestamp(d) - self.rs['date'].min()).days, 0)
+            extra = PRESEASON_SD * max(0.0, 1 - days_in / PRESEASON_DAYS)
+            sd = (sd ** 2 + extra ** 2) ** 0.5
         E = rng.normal(0.0, sd, (n_sims, T)) if sd > 0 else None   # per-sim rating offsets
         w0 = np.zeros(T); g0 = np.zeros(T)
         for h, a, hpt, vpt in done[['h', 'a', 'home_pts', 'visitor_pts']].itertuples(index=False):
@@ -489,6 +554,7 @@ def compute(games, ratings_df, rs_games_by_season, conf_of, div_of, current_seas
         ratings = {d: dict(zip(x['name'], x['rating'])) for d, x in rsub.groupby('date')}
         if not ratings:
             continue
+        ratings = steady_new_teams(ratings, g, new_team_priors(season, ratings_df))
         sim = SeasonSim(season, g, rs_games_by_season(season), conf_of, div_of, ratings,
                         rs_end_by_season.get(season))
         for d in sorted(ratings):
@@ -533,6 +599,7 @@ def _fingerprint(season, games, ratings_df, current_season):
     r['rating'] = r['rating'].round(3)
     h.update(r.to_csv(index=False).encode())
     h.update(repr(REAL_SEEDS.get(season)).encode())     # this season's real seeds only
+    h.update(repr(sorted((t, round(v, 3)) for t, v in new_team_priors(season, ratings_df).items())).encode())
     return h.hexdigest()
 
 
