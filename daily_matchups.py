@@ -147,9 +147,9 @@ def build_season(season, sim_games, ratings, rs_games, conf_of, div_of, rs_end,
     unplayed_days = sorted(set(g.loc[g['home_pts'].isna(), 'date']))
     preview_day = unplayed_days[0] if unplayed_days else None
 
-    days_out = []
+    days_out, previewed = [], False
     for day in days:
-        if preview_day is not None and day > preview_day:
+        if previewed:
             break                                     # live season: preview only the next game day
         before = [d for d in cur if d < day]
         if before:
@@ -266,6 +266,9 @@ def build_season(season, sim_games, ratings, rs_games, conf_of, div_of, rs_end,
                 game['result'] = {'home': int(x.home_pts), 'away': int(x.visitor_pts)}
             game['_q'] = (min(rh['rating'], ra['rating']), max(rh['rating'], ra['rating']))
             games_out.append(game)
+        # The next game day with a game left on it: an unplayed "if
+        # necessary" game after its series ended doesn't count.
+        previewed = preview_day is not None and day >= preview_day and bool(games_out)
         if games_out:
             days_out.append({'date': day.strftime('%Y-%m-%d'),
                              'playoffs': any('series' in x for x in games_out), 'games': games_out})
