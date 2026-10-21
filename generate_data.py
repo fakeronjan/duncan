@@ -130,6 +130,9 @@ NBA_TEAM_DISPLAY_HISTORY = {
                               (2006, 2007, 'NO/OKC Hornets'),
                               (2008, 2013, 'New Orleans Hornets'),
                               (2014, 9999, 'New Orleans Pelicans')],
+    'Brooklyn Nets':         [(1977, 1977, 'New York Nets'),
+                              (1978, 2012, 'New Jersey Nets'),
+                              (2013, 9999, 'Brooklyn Nets')],
 }
 
 

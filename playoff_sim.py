@@ -58,11 +58,10 @@ PRESEASON_SD, PRESEASON_DAYS = 4.0, 30   # 4.0: best early-season log loss of 0-
 # of the seven since 1977: Mavericks, Hornets, Heat, Timberwolves, Magic,
 # Raptors, Grizzlies). Charlotte 2005 (the Bobcats) counts as expansion.
 RELOCATED_FROM = {
-    'New Jersey Nets': 'New York Nets', 'San Diego Clippers': 'Buffalo Braves',
+    'San Diego Clippers': 'Buffalo Braves',
     'Utah Jazz': 'New Orleans Jazz', 'Los Angeles Clippers': 'San Diego Clippers',
     'Sacramento Kings': 'Kansas City Kings', 'Memphis Grizzlies': 'Vancouver Grizzlies',
     'New Orleans Pelicans': 'Charlotte Hornets', 'Oklahoma City Thunder': 'Seattle SuperSonics',
-    'Brooklyn Nets': 'New Jersey Nets',
 }
 EXPANSION_PRIOR = -7.7
 NEW_TEAM_GAMES = 30

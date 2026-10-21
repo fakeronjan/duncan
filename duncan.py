@@ -64,8 +64,12 @@ NBA_CUP_FINAL_DATES = {
 # rebrands. RELOCATIONS are deliberately kept separate ("move the team =
 # lose the history" policy): Baltimore Colts → Indianapolis, Kansas City
 # Kings → Sacramento, Seattle SuperSonics → OKC, San Diego Clippers → LA,
-# Vancouver Grizzlies → Memphis, NJ Nets → Brooklyn, etc. all remain
-# distinct from their post-move franchises.
+# Vancouver Grizzlies → Memphis, etc. all remain distinct from their
+# post-move franchises.
+#
+# Nets note: New York Nets → New Jersey Nets → Brooklyn Nets never left the
+# New York metro area, so they're a rebrand, not a relocation (merged
+# 2026-10-21; previously kept as three franchises).
 #
 # Charlotte note: the original Charlotte Hornets (1989-2002) relocated to
 # New Orleans in 2002. The modern Charlotte Hornets (2014+) are the
@@ -78,6 +82,8 @@ TEAM_ALIASES = {
     'Charlotte Bobcats':                  'Charlotte Hornets',
     'New Orleans Hornets':                'New Orleans Pelicans',
     'New Orleans/Oklahoma City Hornets':  'New Orleans Pelicans',
+    'New York Nets':                      'Brooklyn Nets',
+    'New Jersey Nets':                    'Brooklyn Nets',
 }
 
 # =========================================================

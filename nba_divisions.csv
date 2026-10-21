@@ -3,7 +3,7 @@ season,team,conference,division
 1977,Boston Celtics,East,Atlantic
 1977,New York Knicks,East,Atlantic
 1977,Buffalo Braves,East,Atlantic
-1977,New York Nets,East,Atlantic
+1977,Brooklyn Nets,East,Atlantic
 1977,Houston Rockets,East,Central
 1977,Washington Wizards,East,Central
 1977,San Antonio Spurs,East,Central
@@ -25,7 +25,7 @@ season,team,conference,division
 1978,New York Knicks,East,Atlantic
 1978,Boston Celtics,East,Atlantic
 1978,Buffalo Braves,East,Atlantic
-1978,New Jersey Nets,East,Atlantic
+1978,Brooklyn Nets,East,Atlantic
 1978,San Antonio Spurs,East,Central
 1978,Washington Wizards,East,Central
 1978,Cleveland Cavaliers,East,Central
@@ -45,7 +45,7 @@ season,team,conference,division
 1978,Golden State Warriors,West,Pacific
 1979,Washington Wizards,East,Atlantic
 1979,Philadelphia 76ers,East,Atlantic
-1979,New Jersey Nets,East,Atlantic
+1979,Brooklyn Nets,East,Atlantic
 1979,New York Knicks,East,Atlantic
 1979,Boston Celtics,East,Atlantic
 1979,San Antonio Spurs,East,Central
@@ -69,7 +69,7 @@ season,team,conference,division
 1980,Philadelphia 76ers,East,Atlantic
 1980,Washington Wizards,East,Atlantic
 1980,New York Knicks,East,Atlantic
-1980,New Jersey Nets,East,Atlantic
+1980,Brooklyn Nets,East,Atlantic
 1980,Atlanta Hawks,East,Central
 1980,Houston Rockets,East,Central
 1980,San Antonio Spurs,East,Central
@@ -91,7 +91,7 @@ season,team,conference,division
 1981,Philadelphia 76ers,East,Atlantic
 1981,New York Knicks,East,Atlantic
 1981,Washington Wizards,East,Atlantic
-1981,New Jersey Nets,East,Atlantic
+1981,Brooklyn Nets,East,Atlantic
 1981,Milwaukee Bucks,East,Central
 1981,Chicago Bulls,East,Central
 1981,Indiana Pacers,East,Central
@@ -112,7 +112,7 @@ season,team,conference,division
 1981,Seattle SuperSonics,West,Pacific
 1982,Boston Celtics,East,Atlantic
 1982,Philadelphia 76ers,East,Atlantic
-1982,New Jersey Nets,East,Atlantic
+1982,Brooklyn Nets,East,Atlantic
 1982,Washington Wizards,East,Atlantic
 1982,New York Knicks,East,Atlantic
 1982,Milwaukee Bucks,East,Central
@@ -135,7 +135,7 @@ season,team,conference,division
 1982,San Diego Clippers,West,Pacific
 1983,Philadelphia 76ers,East,Atlantic
 1983,Boston Celtics,East,Atlantic
-1983,New Jersey Nets,East,Atlantic
+1983,Brooklyn Nets,East,Atlantic
 1983,New York Knicks,East,Atlantic
 1983,Washington Wizards,East,Atlantic
 1983,Milwaukee Bucks,East,Central
@@ -159,7 +159,7 @@ season,team,conference,division
 1984,Boston Celtics,East,Atlantic
 1984,Philadelphia 76ers,East,Atlantic
 1984,New York Knicks,East,Atlantic
-1984,New Jersey Nets,East,Atlantic
+1984,Brooklyn Nets,East,Atlantic
 1984,Washington Wizards,East,Atlantic
 1984,Milwaukee Bucks,East,Central
 1984,Detroit Pistons,East,Central
@@ -181,7 +181,7 @@ season,team,conference,division
 1984,San Diego Clippers,West,Pacific
 1985,Boston Celtics,East,Atlantic
 1985,Philadelphia 76ers,East,Atlantic
-1985,New Jersey Nets,East,Atlantic
+1985,Brooklyn Nets,East,Atlantic
 1985,Washington Wizards,East,Atlantic
 1985,New York Knicks,East,Atlantic
 1985,Milwaukee Bucks,East,Central
@@ -205,7 +205,7 @@ season,team,conference,division
 1986,Boston Celtics,East,Atlantic
 1986,Philadelphia 76ers,East,Atlantic
 1986,Washington Wizards,East,Atlantic
-1986,New Jersey Nets,East,Atlantic
+1986,Brooklyn Nets,East,Atlantic
 1986,New York Knicks,East,Atlantic
 1986,Milwaukee Bucks,East,Central
 1986,Atlanta Hawks,East,Central
@@ -228,7 +228,7 @@ season,team,conference,division
 1987,Boston Celtics,East,Atlantic
 1987,Philadelphia 76ers,East,Atlantic
 1987,Washington Wizards,East,Atlantic
-1987,New Jersey Nets,East,Atlantic
+1987,Brooklyn Nets,East,Atlantic
 1987,New York Knicks,East,Atlantic
 1987,Atlanta Hawks,East,Central
 1987,Detroit Pistons,East,Central
@@ -252,7 +252,7 @@ season,team,conference,division
 1988,Washington Wizards,East,Atlantic
 1988,New York Knicks,East,Atlantic
 1988,Philadelphia 76ers,East,Atlantic
-1988,New Jersey Nets,East,Atlantic
+1988,Brooklyn Nets,East,Atlantic
 1988,Detroit Pistons,East,Central
 1988,Chicago Bulls,East,Central
 1988,Atlanta Hawks,East,Central
@@ -275,7 +275,7 @@ season,team,conference,division
 1989,Philadelphia 76ers,East,Atlantic
 1989,Boston Celtics,East,Atlantic
 1989,Washington Wizards,East,Atlantic
-1989,New Jersey Nets,East,Atlantic
+1989,Brooklyn Nets,East,Atlantic
 1989,Charlotte Hornets,East,Atlantic
 1989,Detroit Pistons,East,Central
 1989,Cleveland Cavaliers,East,Central
@@ -301,7 +301,7 @@ season,team,conference,division
 1990,New York Knicks,East,Atlantic
 1990,Washington Wizards,East,Atlantic
 1990,Miami Heat,East,Atlantic
-1990,New Jersey Nets,East,Atlantic
+1990,Brooklyn Nets,East,Atlantic
 1990,Detroit Pistons,East,Central
 1990,Chicago Bulls,East,Central
 1990,Milwaukee Bucks,East,Central
@@ -327,7 +327,7 @@ season,team,conference,division
 1991,Philadelphia 76ers,East,Atlantic
 1991,New York Knicks,East,Atlantic
 1991,Washington Wizards,East,Atlantic
-1991,New Jersey Nets,East,Atlantic
+1991,Brooklyn Nets,East,Atlantic
 1991,Miami Heat,East,Atlantic
 1991,Chicago Bulls,East,Central
 1991,Detroit Pistons,East,Central
@@ -352,7 +352,7 @@ season,team,conference,division
 1991,Sacramento Kings,West,Pacific
 1992,Boston Celtics,East,Atlantic
 1992,New York Knicks,East,Atlantic
-1992,New Jersey Nets,East,Atlantic
+1992,Brooklyn Nets,East,Atlantic
 1992,Miami Heat,East,Atlantic
 1992,Philadelphia 76ers,East,Atlantic
 1992,Washington Wizards,East,Atlantic
@@ -379,7 +379,7 @@ season,team,conference,division
 1992,Sacramento Kings,West,Pacific
 1993,New York Knicks,East,Atlantic
 1993,Boston Celtics,East,Atlantic
-1993,New Jersey Nets,East,Atlantic
+1993,Brooklyn Nets,East,Atlantic
 1993,Orlando Magic,East,Atlantic
 1993,Miami Heat,East,Atlantic
 1993,Philadelphia 76ers,East,Atlantic
@@ -406,7 +406,7 @@ season,team,conference,division
 1993,Sacramento Kings,West,Pacific
 1994,New York Knicks,East,Atlantic
 1994,Orlando Magic,East,Atlantic
-1994,New Jersey Nets,East,Atlantic
+1994,Brooklyn Nets,East,Atlantic
 1994,Miami Heat,East,Atlantic
 1994,Boston Celtics,East,Atlantic
 1994,Philadelphia 76ers,East,Atlantic
@@ -435,7 +435,7 @@ season,team,conference,division
 1995,New York Knicks,East,Atlantic
 1995,Boston Celtics,East,Atlantic
 1995,Miami Heat,East,Atlantic
-1995,New Jersey Nets,East,Atlantic
+1995,Brooklyn Nets,East,Atlantic
 1995,Philadelphia 76ers,East,Atlantic
 1995,Washington Wizards,East,Atlantic
 1995,Indiana Pacers,East,Central
@@ -463,7 +463,7 @@ season,team,conference,division
 1996,Miami Heat,East,Atlantic
 1996,Washington Wizards,East,Atlantic
 1996,Boston Celtics,East,Atlantic
-1996,New Jersey Nets,East,Atlantic
+1996,Brooklyn Nets,East,Atlantic
 1996,Philadelphia 76ers,East,Atlantic
 1996,Chicago Bulls,East,Central
 1996,Indiana Pacers,East,Central
@@ -491,7 +491,7 @@ season,team,conference,division
 1997,New York Knicks,East,Atlantic
 1997,Orlando Magic,East,Atlantic
 1997,Washington Wizards,East,Atlantic
-1997,New Jersey Nets,East,Atlantic
+1997,Brooklyn Nets,East,Atlantic
 1997,Philadelphia 76ers,East,Atlantic
 1997,Boston Celtics,East,Atlantic
 1997,Chicago Bulls,East,Central
@@ -518,7 +518,7 @@ season,team,conference,division
 1997,Golden State Warriors,West,Pacific
 1998,Miami Heat,East,Atlantic
 1998,New York Knicks,East,Atlantic
-1998,New Jersey Nets,East,Atlantic
+1998,Brooklyn Nets,East,Atlantic
 1998,Washington Wizards,East,Atlantic
 1998,Orlando Magic,East,Atlantic
 1998,Boston Celtics,East,Atlantic
@@ -551,7 +551,7 @@ season,team,conference,division
 1999,New York Knicks,East,Atlantic
 1999,Boston Celtics,East,Atlantic
 1999,Washington Wizards,East,Atlantic
-1999,New Jersey Nets,East,Atlantic
+1999,Brooklyn Nets,East,Atlantic
 1999,Indiana Pacers,East,Central
 1999,Atlanta Hawks,East,Central
 1999,Detroit Pistons,East,Central
@@ -579,7 +579,7 @@ season,team,conference,division
 2000,Philadelphia 76ers,East,Atlantic
 2000,Orlando Magic,East,Atlantic
 2000,Boston Celtics,East,Atlantic
-2000,New Jersey Nets,East,Atlantic
+2000,Brooklyn Nets,East,Atlantic
 2000,Washington Wizards,East,Atlantic
 2000,Indiana Pacers,East,Central
 2000,Charlotte Hornets,East,Central
@@ -608,7 +608,7 @@ season,team,conference,division
 2001,New York Knicks,East,Atlantic
 2001,Orlando Magic,East,Atlantic
 2001,Boston Celtics,East,Atlantic
-2001,New Jersey Nets,East,Atlantic
+2001,Brooklyn Nets,East,Atlantic
 2001,Washington Wizards,East,Atlantic
 2001,Milwaukee Bucks,East,Central
 2001,Toronto Raptors,East,Central
@@ -632,7 +632,7 @@ season,team,conference,division
 2001,Seattle SuperSonics,West,Pacific
 2001,Los Angeles Clippers,West,Pacific
 2001,Golden State Warriors,West,Pacific
-2002,New Jersey Nets,East,Atlantic
+2002,Brooklyn Nets,East,Atlantic
 2002,Boston Celtics,East,Atlantic
 2002,Orlando Magic,East,Atlantic
 2002,Philadelphia 76ers,East,Atlantic
@@ -661,7 +661,7 @@ season,team,conference,division
 2002,Los Angeles Clippers,West,Pacific
 2002,Phoenix Suns,West,Pacific
 2002,Golden State Warriors,West,Pacific
-2003,New Jersey Nets,East,Atlantic
+2003,Brooklyn Nets,East,Atlantic
 2003,Philadelphia 76ers,East,Atlantic
 2003,Boston Celtics,East,Atlantic
 2003,Orlando Magic,East,Atlantic
@@ -690,7 +690,7 @@ season,team,conference,division
 2003,Seattle SuperSonics,West,Pacific
 2003,Golden State Warriors,West,Pacific
 2003,Los Angeles Clippers,West,Pacific
-2004,New Jersey Nets,East,Atlantic
+2004,Brooklyn Nets,East,Atlantic
 2004,Miami Heat,East,Atlantic
 2004,New York Knicks,East,Atlantic
 2004,Boston Celtics,East,Atlantic
@@ -721,7 +721,7 @@ season,team,conference,division
 2004,Los Angeles Clippers,West,Pacific
 2005,Boston Celtics,East,Atlantic
 2005,Philadelphia 76ers,East,Atlantic
-2005,New Jersey Nets,East,Atlantic
+2005,Brooklyn Nets,East,Atlantic
 2005,Toronto Raptors,East,Atlantic
 2005,New York Knicks,East,Atlantic
 2005,Detroit Pistons,East,Central
@@ -749,7 +749,7 @@ season,team,conference,division
 2005,Houston Rockets,West,Southwest
 2005,Memphis Grizzlies,West,Southwest
 2005,New Orleans Pelicans,West,Southwest
-2006,New Jersey Nets,East,Atlantic
+2006,Brooklyn Nets,East,Atlantic
 2006,Philadelphia 76ers,East,Atlantic
 2006,Boston Celtics,East,Atlantic
 2006,Toronto Raptors,East,Atlantic
@@ -780,7 +780,7 @@ season,team,conference,division
 2006,New Orleans Pelicans,West,Southwest
 2006,Houston Rockets,West,Southwest
 2007,Toronto Raptors,East,Atlantic
-2007,New Jersey Nets,East,Atlantic
+2007,Brooklyn Nets,East,Atlantic
 2007,Philadelphia 76ers,East,Atlantic
 2007,New York Knicks,East,Atlantic
 2007,Boston Celtics,East,Atlantic
@@ -812,7 +812,7 @@ season,team,conference,division
 2008,Boston Celtics,East,Atlantic
 2008,Toronto Raptors,East,Atlantic
 2008,Philadelphia 76ers,East,Atlantic
-2008,New Jersey Nets,East,Atlantic
+2008,Brooklyn Nets,East,Atlantic
 2008,New York Knicks,East,Atlantic
 2008,Detroit Pistons,East,Central
 2008,Cleveland Cavaliers,East,Central
@@ -841,7 +841,7 @@ season,team,conference,division
 2008,Memphis Grizzlies,West,Southwest
 2009,Boston Celtics,East,Atlantic
 2009,Philadelphia 76ers,East,Atlantic
-2009,New Jersey Nets,East,Atlantic
+2009,Brooklyn Nets,East,Atlantic
 2009,Toronto Raptors,East,Atlantic
 2009,New York Knicks,East,Atlantic
 2009,Cleveland Cavaliers,East,Central
@@ -873,7 +873,7 @@ season,team,conference,division
 2010,Toronto Raptors,East,Atlantic
 2010,New York Knicks,East,Atlantic
 2010,Philadelphia 76ers,East,Atlantic
-2010,New Jersey Nets,East,Atlantic
+2010,Brooklyn Nets,East,Atlantic
 2010,Cleveland Cavaliers,East,Central
 2010,Milwaukee Bucks,East,Central
 2010,Chicago Bulls,East,Central
@@ -902,7 +902,7 @@ season,team,conference,division
 2011,Boston Celtics,East,Atlantic
 2011,New York Knicks,East,Atlantic
 2011,Philadelphia 76ers,East,Atlantic
-2011,New Jersey Nets,East,Atlantic
+2011,Brooklyn Nets,East,Atlantic
 2011,Toronto Raptors,East,Atlantic
 2011,Chicago Bulls,East,Central
 2011,Indiana Pacers,East,Central
@@ -933,7 +933,7 @@ season,team,conference,division
 2012,New York Knicks,East,Atlantic
 2012,Philadelphia 76ers,East,Atlantic
 2012,Toronto Raptors,East,Atlantic
-2012,New Jersey Nets,East,Atlantic
+2012,Brooklyn Nets,East,Atlantic
 2012,Chicago Bulls,East,Central
 2012,Indiana Pacers,East,Central
 2012,Milwaukee Bucks,East,Central
