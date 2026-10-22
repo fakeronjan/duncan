@@ -138,7 +138,8 @@ def build_season(season, sim_games, ratings, rs_games, conf_of, div_of, rs_end,
     cur_set = set(cur)
     snaps = {d: (steady(x, d) if d in cur_set else x) for d, x in snaps.items()}
     sim_ratings = {d: dict(zip(snaps[d].index, snaps[d]['rating'])) for d in cur}
-    sim = playoff_sim.SeasonSim(season, g, rs_games, conf_of, div_of, sim_ratings, rs_end)
+    sim = playoff_sim.SeasonSim(season, g, rs_games, conf_of, div_of, sim_ratings, rs_end,
+                                playoff_sim.pedigree(season, sim_games))
     rs_keys = set(zip(sim.rs['date'], sim.rs['home'], sim.rs['away']))
     mu = _mu_by_day(g, prev_mu)
 

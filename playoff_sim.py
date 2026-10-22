@@ -66,6 +66,40 @@ RELOCATED_FROM = {
 EXPANSION_PRIOR = -7.7
 NEW_TEAM_GAMES = 30
 
+# Playoff pedigree (2026-10-21): in postseason games a team gets extra rating
+# points for how far it went in last season's playoffs: champion 3, Finals
+# loser 2, conference finals losers 1. Teams coming off deep runs beat these
+# odds (1978-2026: defending champs won 12 titles against 6.2 expected).
+# Fit on 3,698 playoff games at +3.1 / +2.2 / +1.3, similar in both halves of
+# history; the regular-season effect is small (+0.6 for a defending champ),
+# so it applies to the bracket only. Same franchise name only: a relocated
+# team starts without it.
+PEDIGREE_PTS = (3.0, 2.0, 1.0)
+
+
+def pedigree(season, games):
+    """{team: bonus pts} from season-1's playoffs. The Finals are the run of
+    games at the very end of the season between one pair of teams (the last
+    game decides them); each finalist's last game before that was its
+    conference finals clincher."""
+    g = games[(games['season'] == season - 1) & games['home_pts'].notna()]
+    if g.empty:
+        return {}
+    rows = list(g.sort_values('date', kind='stable')[['home', 'away', 'home_pts', 'visitor_pts']]
+                .itertuples(index=False))
+    last = rows[-1]
+    pair = {last.home, last.away}
+    champ = last.home if last.home_pts > last.visitor_pts else last.away
+    out = {champ: PEDIGREE_PTS[0], (pair - {champ}).pop(): PEDIGREE_PTS[1]}
+    i = len(rows)
+    while i and {rows[i - 1].home, rows[i - 1].away} == pair:
+        i -= 1
+    for t in pair:
+        prior = [x for x in rows[:i] if t in (x.home, x.away)]
+        if prior:
+            out.setdefault(prior[-1].away if prior[-1].home == t else prior[-1].home, PEDIGREE_PTS[2])
+    return out
+
 
 def new_team_priors(season, ratings_df):
     """{team: starting rating} for teams rated this season but not last.
@@ -225,10 +259,12 @@ def entry_rounds(season):
 
 
 class SeasonSim:
-    def __init__(self, season, games, rs_games_total, conf_of, div_of, ratings, rs_end=None):
+    def __init__(self, season, games, rs_games_total, conf_of, div_of, ratings, rs_end=None,
+                 pedigree=None):
         """games: season's games (date, home, away, home_pts, visitor_pts; NaN
         pts = scheduled). Regular season = games on or before rs_end when
-        known (completed seasons), else each team's first rs_games_total."""
+        known (completed seasons), else each team's first rs_games_total.
+        pedigree: {team: playoff bonus pts} (see pedigree())."""
         self.season = season
         # Full content key, not just date: the sim draws random numbers in row
         # order, so same-day games arriving in a different order reshuffled
@@ -261,6 +297,7 @@ class SeasonSim:
         self.ps['winner'] = np.where(self.ps['home_pts'] > self.ps['visitor_pts'],
                                      self.ps['home'], self.ps['away'])
         self.ratings = ratings
+        self.ped = np.array([(pedigree or {}).get(t, 0.0) for t in self.teams])
         self.bracket = bracket_for(season)
         self.n_rounds = max(r for _, r, *_ in self.bracket)
 
@@ -476,7 +513,8 @@ class SeasonSim:
                 a_better = np.full(n_sims, real_a)
             actual = ps_by_pair.get(frozenset((self.teams[a[0]], self.teams[b[0]])), []) if fixed else []
             off = 0.0 if E is None else E[sim_ix, a] - E[sim_ix, b]
-            p_a = lambda edge: ndtr(A * (R[a] - R[b] + off + edge))
+            ped = self.ped[a] - self.ped[b]
+            p_a = lambda edge: ndtr(A * (R[a] - R[b] + off + ped + edge))
             if kind == 'pi2020':
                 # a = 8 seed (one win needed), b = 9 seed (two wins needed);
                 # skipped entirely if the 9 seed finished more than 4 games back.
@@ -555,7 +593,7 @@ def compute(games, ratings_df, rs_games_by_season, conf_of, div_of, current_seas
             continue
         ratings = steady_new_teams(ratings, g, new_team_priors(season, ratings_df))
         sim = SeasonSim(season, g, rs_games_by_season(season), conf_of, div_of, ratings,
-                        rs_end_by_season.get(season))
+                        rs_end_by_season.get(season), pedigree(season, games))
         for d in sorted(ratings):
             n = N_SIMS
             o = sim.odds_at(d, n_sims=n)
@@ -598,6 +636,7 @@ def _fingerprint(season, games, ratings_df, current_season):
     r['rating'] = r['rating'].round(3)
     h.update(r.to_csv(index=False).encode())
     h.update(repr(REAL_SEEDS.get(season)).encode())     # this season's real seeds only
+    h.update(repr(sorted(pedigree(season, games).items())).encode())   # last season's playoffs
     h.update(repr(sorted((t, round(v, 3)) for t, v in new_team_priors(season, ratings_df).items())).encode())
     return h.hexdigest()
 
