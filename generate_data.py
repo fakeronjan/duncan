@@ -371,6 +371,19 @@ if not _sched.empty:
         'away': _sched['visitor_team_name'].replace(TEAM_ALIASES),
         'home_pts': np.nan, 'visitor_pts': np.nan,
         'is_neutral': neutral_flags(_sched).to_numpy()})], ignore_index=True)
+    _pi = _loaded[(_loaded['season'] == _cur_season) & (_loaded['game_remarks'] == 'Play-In Game')]
+    _pi_keys = set(zip(pd.to_datetime(_pi['date_game'], format='%a, %b %d, %Y'),
+                       _pi['home_team_name'].replace(TEAM_ALIASES),
+                       _pi['visitor_team_name'].replace(TEAM_ALIASES)))
+    _cur = _sim_games['season'] == _cur_season
+    _cg = _sim_games[_cur]
+    _kept, _dropped = playoff_sim.drop_surplus_series_rows(
+        _cg, _cur_season, REGULAR_SEASON_GAMES.get(_cur_season, 82),
+        pd.Series([k in _pi_keys for k in zip(_cg['date'], _cg['home'], _cg['away'])], index=_cg.index))
+    for _i in _dropped:
+        _r = _sim_games.loc[_i]
+        print(f"  Dropped stale playoff row: {_r['date'].date()} {_r['away']} @ {_r['home']}")
+    _sim_games = pd.concat([_sim_games[~_cur], _kept], ignore_index=True)
 
 _sim_ratings = df[['season', 'date', 'name', 'rating']].copy()
 _sim_ratings['date'] = pd.to_datetime(_sim_ratings['date'])
