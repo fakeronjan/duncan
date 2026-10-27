@@ -59733,15 +59733,15 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Sun, Oct 25, 2026",7:30p,Detroit Pistons,106,Philadelphia 76ers,93,Box Score,,"21,117",,2027,Xfinity Mobile Arena,2:31
 "Sun, Oct 25, 2026",9:00p,Memphis Grizzlies,123,Sacramento Kings,112,Box Score,,"13,076",,2027,Golden 1 Center,2:19
 "Sun, Oct 25, 2026",5:00p,Los Angeles Lakers,132,Utah Jazz,123,Box Score,,"17,867",,2027,Delta Center,2:25
-"Mon, Oct 26, 2026",7:30p,Chicago Bulls,,Boston Celtics,,,,,,2027,TD Garden,
-"Mon, Oct 26, 2026",7:00p,Washington Wizards,,Charlotte Hornets,,,,,,2027,Spectrum Center,
-"Mon, Oct 26, 2026",7:00p,Minnesota Timberwolves,,Cleveland Cavaliers,,,,,,2027,Rocket Arena,
-"Mon, Oct 26, 2026",10:00p,Golden State Warriors,,Denver Nuggets,,,,,,2027,Ball Arena,
-"Mon, Oct 26, 2026",8:30p,Atlanta Hawks,,Houston Rockets,,,,,,2027,Toyota Center,
-"Mon, Oct 26, 2026",7:30p,Dallas Mavericks,,Miami Heat,,,,,,2027,Kaseya Center,
-"Mon, Oct 26, 2026",8:00p,Indiana Pacers,,Milwaukee Bucks,,,,,,2027,Fiserv Forum,
-"Mon, Oct 26, 2026",8:00p,Phoenix Suns,,Oklahoma City Thunder,,,,,,2027,Paycom Center,
-"Mon, Oct 26, 2026",9:00p,Memphis Grizzlies,,Utah Jazz,,,,,,2027,Delta Center,
+"Mon, Oct 26, 2026",7:30p,Chicago Bulls,99,Boston Celtics,134,Box Score,,"19,156",,2027,TD Garden,2:17
+"Mon, Oct 26, 2026",7:00p,Washington Wizards,103,Charlotte Hornets,110,Box Score,,"17,949",,2027,Spectrum Center,2:14
+"Mon, Oct 26, 2026",7:00p,Minnesota Timberwolves,125,Cleveland Cavaliers,127,Box Score,OT,"19,432",,2027,Rocket Arena,2:48
+"Mon, Oct 26, 2026",10:00p,Golden State Warriors,134,Denver Nuggets,114,Box Score,,"19,520",,2027,Ball Arena,2:19
+"Mon, Oct 26, 2026",8:30p,Atlanta Hawks,110,Houston Rockets,120,Box Score,,"18,055",,2027,Toyota Center,2:16
+"Mon, Oct 26, 2026",7:30p,Dallas Mavericks,113,Miami Heat,109,Box Score,,"19,611",,2027,Kaseya Center,2:21
+"Mon, Oct 26, 2026",8:00p,Indiana Pacers,102,Milwaukee Bucks,110,Box Score,,"10,674",,2027,Fiserv Forum,2:21
+"Mon, Oct 26, 2026",8:00p,Phoenix Suns,114,Oklahoma City Thunder,125,Box Score,,"18,203",,2027,Paycom Center,2:17
+"Mon, Oct 26, 2026",9:00p,Memphis Grizzlies,110,Utah Jazz,105,Box Score,,"17,867",,2027,Delta Center,2:19
 "Tue, Oct 27, 2026",7:30p,Brooklyn Nets,,Boston Celtics,,,,,,2027,TD Garden,
 "Tue, Oct 27, 2026",11:00p,Portland Trail Blazers,,Los Angeles Lakers,,,,,,2027,Crypto.com Arena,
 "Tue, Oct 27, 2026",8:00p,Detroit Pistons,,New York Knicks,,,,,,2027,Madison Square Garden (IV),
@@ -59758,7 +59758,7 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Wed, Oct 28, 2026",8:00p,Denver Nuggets,,New Orleans Pelicans,,,,,,2027,Smoothie King Center,
 "Wed, Oct 28, 2026",7:30p,Orlando Magic,,Toronto Raptors,,,,,,2027,Scotiabank Arena,
 "Wed, Oct 28, 2026",9:00p,San Antonio Spurs,,Utah Jazz,,,,,,2027,Delta Center,
-"Thu, Oct 29, 2026",7:00p,Cleveland Cavaliers,,Atlanta Hawks,,,,,,2027,State Farm Arena,
+"Thu, Oct 29, 2026",8:00p,Cleveland Cavaliers,,Atlanta Hawks,,,,,,2027,State Farm Arena,
 "Thu, Oct 29, 2026",8:00p,Sacramento Kings,,New Orleans Pelicans,,,,,,2027,Smoothie King Center,
 "Thu, Oct 29, 2026",10:00p,Memphis Grizzlies,,Portland Trail Blazers,,,,,,2027,Moda Center,
 "Fri, Oct 30, 2026",7:30p,Chicago Bulls,,Boston Celtics,,,,,NBA Cup,2027,TD Garden,
