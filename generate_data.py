@@ -1051,6 +1051,11 @@ _dm_ratings = df[['season', 'date', 'name', 'rating', 'rank', 'rating_o', 'ratin
 _dm_ratings['date'] = pd.to_datetime(_dm_ratings['date'])
 _dm_ratings['season'] = _dm_ratings['season'].astype(int)
 _dm_seasons = sorted(int(s) for s in _dm_games['season'].unique() if s >= 1977)
+# Scores as decimals whether or not unplayed games are appended: the matchups cache
+# fingerprints each season by its games' CSV text, and an all-played history reads "2,8"
+# where one with unplayed rows reads "2.0,8.0", which rebuilt every season once the
+# schedule emptied (GRIFFEY after the 2026 World Series).
+_dm_games = _dm_games.astype({c: "float64" for c in ("home_pts", "visitor_pts", "overtimes") if c in _dm_games.columns})
 _dm_all = daily_matchups.build_cached(
     _dm_seasons, _dm_games, _dm_ratings, lambda s: REGULAR_SEASON_GAMES.get(s, 82), _conf_of, _div_of,
     _sim_rs_end, _dm_cup, _dm_start)
