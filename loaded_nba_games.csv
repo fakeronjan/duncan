@@ -59822,13 +59822,13 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Fri, Nov 6, 2026",8:00p,Toronto Raptors,121,Milwaukee Bucks,107,Box Score,,"14,057",NBA Cup,2027,Fiserv Forum,2:25
 "Fri, Nov 6, 2026",8:00p,Minnesota Timberwolves,115,New Orleans Pelicans,109,Box Score,,"17,767",NBA Cup,2027,Smoothie King Center,2:34
 "Fri, Nov 6, 2026",10:00p,San Antonio Spurs,124,Sacramento Kings,109,Box Score,,"14,238",NBA Cup,2027,Golden 1 Center,2:21
-"Sat, Nov 7, 2026",7:30p,Brooklyn Nets,,Atlanta Hawks,,,,,,2027,State Farm Arena,
-"Sat, Nov 7, 2026",8:00p,New York Knicks,,Cleveland Cavaliers,,,,,,2027,Rocket Arena,
-"Sat, Nov 7, 2026",8:30p,Orlando Magic,,Golden State Warriors,,,,,,2027,Chase Center,
-"Sat, Nov 7, 2026",5:00p,Denver Nuggets,,Indiana Pacers,,,,,,2027,Mexico City Arena,
-"Sat, Nov 7, 2026",8:00p,Washington Wizards,,Oklahoma City Thunder,,,,,,2027,Paycom Center,
-"Sat, Nov 7, 2026",9:00p,Houston Rockets,,Phoenix Suns,,,,,,2027,Mortgage Matchup Center,
-"Sat, Nov 7, 2026",10:00p,San Antonio Spurs,,Portland Trail Blazers,,,,,,2027,Moda Center,
+"Sat, Nov 7, 2026",7:30p,Brooklyn Nets,121,Atlanta Hawks,124,Box Score,,"16,117",,2027,State Farm Arena,2:32
+"Sat, Nov 7, 2026",8:00p,New York Knicks,109,Cleveland Cavaliers,97,Box Score,,"19,432",,2027,Rocket Arena,2:10
+"Sat, Nov 7, 2026",8:30p,Orlando Magic,119,Golden State Warriors,126,Box Score,OT,"18,064",,2027,Chase Center,2:45
+"Sat, Nov 7, 2026",5:00p,Denver Nuggets,114,Indiana Pacers,102,Box Score,,"20,191",,2027,Mexico City Arena,2:17
+"Sat, Nov 7, 2026",8:00p,Washington Wizards,75,Oklahoma City Thunder,114,Box Score,,"18,203",,2027,Paycom Center,2:05
+"Sat, Nov 7, 2026",9:00p,Houston Rockets,99,Phoenix Suns,102,Box Score,,"17,071",,2027,Mortgage Matchup Center,2:12
+"Sat, Nov 7, 2026",10:00p,San Antonio Spurs,125,Portland Trail Blazers,103,Box Score,,"19,916",,2027,Moda Center,2:21
 "Sun, Nov 8, 2026",3:30p,Philadelphia 76ers,,Chicago Bulls,,,,,,2027,United Center,
 "Sun, Nov 8, 2026",7:30p,Brooklyn Nets,,Dallas Mavericks,,,,,,2027,American Airlines Center,
 "Sun, Nov 8, 2026",6:00p,Los Angeles Lakers,,Detroit Pistons,,,,,,2027,Little Caesars Arena,
@@ -59895,8 +59895,8 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Mon, Nov 16, 2026",8:00p,Portland Trail Blazers,,Minnesota Timberwolves,,,,,,2027,Target Center,
 "Mon, Nov 16, 2026",8:00p,Golden State Warriors,,New Orleans Pelicans,,,,,,2027,Smoothie King Center,
 "Mon, Nov 16, 2026",7:00p,Memphis Grizzlies,,Washington Wizards,,,,,,2027,Capital One Arena,
-"Tue, Nov 17, 2026",11:00p,Utah Jazz,,Los Angeles Clippers,,,,,,2027,Intuit Dome,
-"Tue, Nov 17, 2026",10:00p,Charlotte Hornets,,Los Angeles Lakers,,,,,,2027,Crypto.com Arena,
+"Tue, Nov 17, 2026",10:30p,Utah Jazz,,Los Angeles Clippers,,,,,,2027,Intuit Dome,
+"Tue, Nov 17, 2026",11:00p,Charlotte Hornets,,Los Angeles Lakers,,,,,,2027,Crypto.com Arena,
 "Tue, Nov 17, 2026",8:00p,Portland Trail Blazers,,Minnesota Timberwolves,,,,,,2027,Target Center,
 "Tue, Nov 17, 2026",8:00p,Detroit Pistons,,San Antonio Spurs,,,,,,2027,Frost Bank Center,
 "Tue, Nov 17, 2026",7:30p,New York Knicks,,Toronto Raptors,,,,,,2027,Scotiabank Arena,
@@ -60245,9 +60245,9 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Sun, Jan 10, 2027",6:00p,Philadelphia 76ers,,Toronto Raptors,,,,,,2027,Scotiabank Arena,
 "Mon, Jan 11, 2027",7:30p,Houston Rockets,,Boston Celtics,,,,,,2027,TD Garden,
 "Mon, Jan 11, 2027",7:00p,Brooklyn Nets,,Indiana Pacers,,,,,,2027,Gainbridge Fieldhouse,
-"Mon, Jan 11, 2027",10:00p,Los Angeles Lakers,,Los Angeles Clippers,,,,,,2027,Intuit Dome,
-"Mon, Jan 11, 2027",8:00p,Cleveland Cavaliers,,Minnesota Timberwolves,,,,,,2027,Target Center,
-"Mon, Jan 11, 2027",7:30p,Denver Nuggets,,New York Knicks,,,,,,2027,Madison Square Garden (IV),
+"Mon, Jan 11, 2027",10:30p,Los Angeles Lakers,,Los Angeles Clippers,,,,,,2027,Intuit Dome,
+"Mon, Jan 11, 2027",9:30p,Cleveland Cavaliers,,Minnesota Timberwolves,,,,,,2027,Target Center,
+"Mon, Jan 11, 2027",7:00p,Denver Nuggets,,New York Knicks,,,,,,2027,Madison Square Garden (IV),
 "Mon, Jan 11, 2027",7:00p,Atlanta Hawks,,Washington Wizards,,,,,,2027,Capital One Arena,
 "Tue, Jan 12, 2027",11:00p,Sacramento Kings,,Golden State Warriors,,,,,,2027,Chase Center,
 "Tue, Jan 12, 2027",8:00p,Dallas Mavericks,,Memphis Grizzlies,,,,,,2027,FedExForum,
