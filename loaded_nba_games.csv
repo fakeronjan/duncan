@@ -59912,10 +59912,10 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Wed, Nov 18, 2026",7:00p,Philadelphia 76ers,121,Orlando Magic,116,Box Score,,"19,365",,2027,Kia Center,2:22
 "Wed, Nov 18, 2026",10:00p,Phoenix Suns,128,Sacramento Kings,107,Box Score,,"13,016",,2027,Golden 1 Center,2:06
 "Wed, Nov 18, 2026",7:30p,Washington Wizards,103,Toronto Raptors,99,Box Score,,"19,007",,2027,Scotiabank Arena,2:16
-"Thu, Nov 19, 2026",8:00p,Golden State Warriors,,Memphis Grizzlies,,,,,,2027,FedExForum,
-"Thu, Nov 19, 2026",8:00p,Portland Trail Blazers,,Milwaukee Bucks,,,,,,2027,Fiserv Forum,
-"Thu, Nov 19, 2026",8:00p,New York Knicks,,Minnesota Timberwolves,,,,,,2027,Target Center,
-"Thu, Nov 19, 2026",8:00p,Los Angeles Clippers,,San Antonio Spurs,,,,,,2027,Frost Bank Center,
+"Thu, Nov 19, 2026",8:00p,Golden State Warriors,98,Memphis Grizzlies,126,Box Score,,"15,019",,2027,FedExForum,2:15
+"Thu, Nov 19, 2026",8:00p,Portland Trail Blazers,124,Milwaukee Bucks,114,Box Score,,"13,545",,2027,Fiserv Forum,2:17
+"Thu, Nov 19, 2026",8:00p,New York Knicks,102,Minnesota Timberwolves,99,Box Score,,,,2027,Target Center,2:10
+"Thu, Nov 19, 2026",8:00p,Los Angeles Clippers,112,San Antonio Spurs,124,Box Score,,"18,532",,2027,Frost Bank Center,2:18
 "Fri, Nov 20, 2026",7:00p,Charlotte Hornets,,Atlanta Hawks,,,,,NBA Cup,2027,State Farm Arena,
 "Fri, Nov 20, 2026",7:30p,Orlando Magic,,Brooklyn Nets,,,,,NBA Cup,2027,Barclays Center,
 "Fri, Nov 20, 2026",8:00p,Washington Wizards,,Chicago Bulls,,,,,NBA Cup,2027,United Center,
@@ -59976,7 +59976,7 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Sat, Nov 28, 2026",8:30p,Philadelphia 76ers,,Houston Rockets,,,,,,2027,Toyota Center,
 "Sat, Nov 28, 2026",8:00p,Oklahoma City Thunder,,Milwaukee Bucks,,,,,,2027,Fiserv Forum,
 "Sat, Nov 28, 2026",5:00p,Orlando Magic,,Washington Wizards,,,,,,2027,Capital One Arena,
-"Sun, Nov 29, 2026",6:00p,Miami Heat,,Cleveland Cavaliers,,,,,,2027,Rocket Arena,
+"Sun, Nov 29, 2026",3:30p,Miami Heat,,Cleveland Cavaliers,,,,,,2027,Rocket Arena,
 "Sun, Nov 29, 2026",6:00p,Orlando Magic,,Detroit Pistons,,,,,,2027,Little Caesars Arena,
 "Sun, Nov 29, 2026",8:30p,Los Angeles Clippers,,Golden State Warriors,,,,,,2027,Chase Center,
 "Sun, Nov 29, 2026",4:00p,Los Angeles Lakers,,Memphis Grizzlies,,,,,,2027,FedExForum,
