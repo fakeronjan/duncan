@@ -59918,7 +59918,7 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Thu, Nov 19, 2026",8:00p,Los Angeles Clippers,112,San Antonio Spurs,124,Box Score,,"18,532",,2027,Frost Bank Center,2:18
 "Fri, Nov 20, 2026",7:00p,Charlotte Hornets,97,Atlanta Hawks,111,Box Score,,"15,488",NBA Cup,2027,State Farm Arena,2:06
 "Fri, Nov 20, 2026",7:30p,Orlando Magic,113,Brooklyn Nets,111,Box Score,,"17,067",NBA Cup,2027,Barclays Center,2:25
-"Fri, Nov 20, 2026",8:00p,Washington Wizards,98,Chicago Bulls,94,Box Score,,,NBA Cup,2027,United Center,2:15
+"Fri, Nov 20, 2026",8:00p,Washington Wizards,98,Chicago Bulls,94,Box Score,,"20,200",NBA Cup,2027,United Center,2:15
 "Fri, Nov 20, 2026",7:30p,Indiana Pacers,119,Cleveland Cavaliers,128,Box Score,,"19,432",NBA Cup,2027,Rocket Arena,2:15
 "Fri, Nov 20, 2026",10:00p,Houston Rockets,124,Denver Nuggets,133,Box Score,,"19,566",NBA Cup,2027,Ball Arena,2:23
 "Fri, Nov 20, 2026",7:30p,Toronto Raptors,105,Detroit Pistons,102,Box Score,,"20,178",NBA Cup,2027,Little Caesars Arena,2:24
@@ -59938,16 +59938,16 @@ date_game,game_start_time,visitor_team_name,visitor_pts,home_team_name,home_pts,
 "Sun, Nov 22, 2026",8:00p,Indiana Pacers,106,New York Knicks,113,Box Score,,"19,812",,2027,Madison Square Garden (IV),2:25
 "Sun, Nov 22, 2026",7:00p,Dallas Mavericks,116,Utah Jazz,114,Box Score,,"17,867",,2027,Delta Center,2:15
 "Sun, Nov 22, 2026",7:00p,Orlando Magic,96,Washington Wizards,116,Box Score,,"15,896",,2027,Capital One Arena,2:04
-"Mon, Nov 23, 2026",7:00p,Memphis Grizzlies,,Charlotte Hornets,,,,,,2027,Spectrum Center,
-"Mon, Nov 23, 2026",8:00p,Cleveland Cavaliers,,Chicago Bulls,,,,,,2027,United Center,
-"Mon, Nov 23, 2026",8:30p,Los Angeles Clippers,,Houston Rockets,,,,,,2027,Toyota Center,
-"Mon, Nov 23, 2026",7:30p,Oklahoma City Thunder,,Indiana Pacers,,,,,,2027,Gainbridge Fieldhouse,
-"Mon, Nov 23, 2026",10:00p,Utah Jazz,,Los Angeles Lakers,,,,,,2027,Crypto.com Arena,
-"Mon, Nov 23, 2026",7:30p,Brooklyn Nets,,Minnesota Timberwolves,,,,,,2027,Target Center,
-"Mon, Nov 23, 2026",8:00p,Phoenix Suns,,New Orleans Pelicans,,,,,,2027,Smoothie King Center,
-"Mon, Nov 23, 2026",7:00p,Portland Trail Blazers,,Philadelphia 76ers,,,,,,2027,Xfinity Mobile Arena,
-"Mon, Nov 23, 2026",10:00p,San Antonio Spurs,,Sacramento Kings,,,,,,2027,Golden 1 Center,
-"Mon, Nov 23, 2026",7:30p,Milwaukee Bucks,,Toronto Raptors,,,,,,2027,Scotiabank Arena,
+"Mon, Nov 23, 2026",7:00p,Memphis Grizzlies,117,Charlotte Hornets,111,Box Score,,"18,018",,2027,Spectrum Center,2:16
+"Mon, Nov 23, 2026",8:00p,Cleveland Cavaliers,108,Chicago Bulls,122,Box Score,,"20,150",,2027,United Center,2:15
+"Mon, Nov 23, 2026",8:30p,Los Angeles Clippers,104,Houston Rockets,116,Box Score,,"18,055",,2027,Toyota Center,2:09
+"Mon, Nov 23, 2026",7:30p,Oklahoma City Thunder,120,Indiana Pacers,125,Box Score,,"17,274",,2027,Gainbridge Fieldhouse,2:13
+"Mon, Nov 23, 2026",10:00p,Utah Jazz,94,Los Angeles Lakers,109,Box Score,,"19,057",,2027,Crypto.com Arena,2:24
+"Mon, Nov 23, 2026",7:30p,Brooklyn Nets,116,Minnesota Timberwolves,142,Box Score,,"18,329",,2027,Target Center,2:18
+"Mon, Nov 23, 2026",8:00p,Phoenix Suns,123,New Orleans Pelicans,119,Box Score,OT,"16,875",,2027,Smoothie King Center,2:37
+"Mon, Nov 23, 2026",7:00p,Portland Trail Blazers,128,Philadelphia 76ers,111,Box Score,,"21,512",,2027,Xfinity Mobile Arena,2:13
+"Mon, Nov 23, 2026",10:00p,San Antonio Spurs,123,Sacramento Kings,107,Box Score,,"15,301",,2027,Golden 1 Center,2:13
+"Mon, Nov 23, 2026",7:30p,Milwaukee Bucks,116,Toronto Raptors,111,Box Score,,"18,969",,2027,Scotiabank Arena,2:21
 "Tue, Nov 24, 2026",10:00p,Dallas Mavericks,,Denver Nuggets,,,,,NBA Cup,2027,Ball Arena,
 "Tue, Nov 24, 2026",7:00p,Detroit Pistons,,Orlando Magic,,,,,NBA Cup,2027,Kia Center,
 "Tue, Nov 24, 2026",8:00p,Boston Celtics,,Washington Wizards,,,,,NBA Cup,2027,Capital One Arena,
